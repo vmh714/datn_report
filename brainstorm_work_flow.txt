@@ -1,0 +1,197 @@
+### PROMPT1
+* my request:
+
+```
+đồ án tốt nghiệp của tôi được yêu cầu viết luận văn bằng latex bằng template cho trước ở trên overleaf. file tree của project đó bao gồm:
+ở root dir thì gồm 2 folder là Chuong (chứa các chương trong này), Hinhve (là nơi để ảnh để link vào các nội dung), Bia_lot.tex cùng Bia.tex là hai file định dạng cho bìa và bìa lót của luận văn, tiếp theo là DoAn.tex chứa thông tin các package được import trong project đã được điều chỉnh sẵn và tu_viet_tat.tex và Danh_sach_tai_lieu_tham_khao.bib chứa các thông tin trích dẫn và từ viết tắt. Tôi nên làm việc như thế nào để tăng hiệu quả viết luận văn, tôi định dùng AI để fill nội dung sau đó tôi sẽ verify để đảm bảo trong đạo văn. trong folder chương chứa các chương yêu cầu cùng skeleton và hướng dẫn cơ bản cách tìm và điền thông tin vào đó
+```
+
+* AI response:
+
+```
+Việc làm đồ án tốt nghiệp bằng Overleaf với template có sẵn là một lợi thế lớn vì bạn không cần lo lắng về layout hay format (font, margin, spacing) mà chỉ cần tập trung vào nội dung.
+
+Với cấu trúc file tree hiện tại cùng ý định phối hợp với AI để tăng tốc độ viết, dưới đây là quy trình làm việc tối ưu giúp bạn vừa đẩy nhanh tiến độ, vừa đảm bảo tính học thuật và **vượt qua vòng quét đạo văn (turnitin, bách khoa,...)** một cách an toàn.
+
+---
+
+## 1. Hiểu Rõ Vai Trò Của File DoAn.tex (File Tổng)
+
+File `DoAn.tex` ở root chính là "trái tim" của dự án. Thông thường, bạn **không nên viết trực tiếp nội dung các chương vào đây**. File này sẽ dùng lệnh `\include{Chuong/Chuong1}` hoặc `\input{...}` để gọi các file từ folder `Chuong`.
+
+* **Nhiệm vụ của bạn:** Mở `DoAn.tex` ra trước, tìm đến đoạn body xem thứ tự gọi các chương đã đúng với skeleton chưa.
+* **Khi làm việc:** Bạn chỉ mở các file `.tex` riêng lẻ trong folder `Chuong` để viết. Việc chia nhỏ này giúp Overleaf compile (biên dịch) nhanh hơn và dễ quản lý, tránh clone nhầm code.
+
+---
+
+## 2. Chiến Lược Phối Hợp Với AI Để Fill Nội Dung (Không Bị Đạo Văn)
+
+Nếu bạn bê nguyên văn văn bản AI giải thích vào luận văn, khả năng cao sẽ dính lỗi **"AI-generated content"** hoặc trùng lặp cấu trúc câu diễn đạt phổ biến trên mạng. Hãy dùng AI làm **"Trợ lý cấu trúc và gợi ý từ vựng"** thay vì "Người viết hộ".
+
+### Bước 1: Trích xuất Keyword & Cốt lõi từ Skeleton
+
+Mỗi file chương đã có sẵn skeleton và hướng dẫn. Hãy đọc kỹ phần đó, vạch ra các ý chính bạn *bắt buộc phải có* bằng gạch đầu dòng (bullet points) dựa trên chính số liệu/kết quả thực tế của bạn.
+
+### Bước 2: Dùng Prompt "Định hình khung" (Khuyên dùng)
+
+Đừng bắt AI viết cả chương. Hãy bắt AI viết từng mục nhỏ (ví dụ: mục 1.1, mục 2.3).
+
+> **Prompt ví dụ:** *"Tôi đang viết mục 'Tổng quan về cảm biến XYZ' cho luận văn ngành Công nghệ thông tin. Tôi có các ý sau: [Ý 1, Ý 2, Ý 3]. Hãy viết thành một đoạn văn học thuật bằng tiếng Việt, sử dụng thuật ngữ chuyên ngành chính xác, độ dài khoảng 300 từ."*
+
+### Bước 3: Đọc - Hiểu - "Việt hóa" theo văn phong cá nhân (Quan trọng nhất)
+
+* Khi AI trả kết quả, hãy đọc lại và **tự gõ lại bằng tay** theo cách hiểu của bạn. Việc tự gõ lại và thay đổi cấu trúc câu (chuyển câu chủ động thành bị động, thay đổi từ đồng nghĩa chuyên ngành) là cách tốt nhất để xóa "vết dấu" của AI và tránh đạo văn.
+* **Kiểm tra tính đúng đắn:** AI rất hay "bịa" ra các khẳng định kỹ thuật nếu nó không có dữ liệu. Bạn là người verify cuối cùng dựa trên kiến thức hệ thống của mình.
+
+---
+
+## 3. Quy Trình Quản Lý Hình Ảnh (`Hinhve`) và Tài Liệu Tham Khảo (`.bib`)
+
+Để không bị rối và mất thời gian sửa lỗi compile về sau, hãy tuân thủ quy tắc "Làm đến đâu, gọn đến đấy":
+
+### Đối với folder `Hinhve`
+
+* **Đặt tên file ảnh khoa học:** Không đặt tên kiểu `image1.png`, `anh_so_do.jpg`. Hãy đặt theo cấu trúc: `c1_so_do_khoi.png` (Chương 1, sơ đồ khối), `c3_bieu_do_loss.png` (Chương 3, biểu đồ loss).
+* Khi dùng lệnh `\includegraphics`, chỉ cần gọi tên file (vì trong `DoAn.tex` thường đã định nghĩa sẵn đường dẫn mặc định vào folder `Hinhve` qua lệnh `\graphicspath{{Hinhve/}}`).
+
+### Đối với file `Danh_sach_tai_lieu_tham_khao.bib`
+
+* Mỗi khi bạn tìm được một tài liệu hay trên Google Scholar, IEEE Xplore, hãy bấm vào nút **"Cite"** -> chọn **BibTeX**.
+* Copy đoạn code đó và paste ngay vào file `.bib`.
+* **Mẹo:** Đổi lại cái `Cite Key` (từ khóa kích hoạt) cho dễ nhớ.
+* *Ví dụ gốc:* `@article{nguyen2024fall, ...}` -> Bạn giữ nguyên hoặc sửa thành `nguyen2024fall`.
+* Trong file chương, khi cần trích dẫn chỉ cần gõ: `\cite{nguyen2024fall}`. Việc này giúp danh mục tài liệu tham khảo tự động sinh ra và tự sắp xếp đúng thứ tự mà không cần bạn gõ tay cuối quyển.
+
+
+
+### Đối với file `tu_viet_tat.tex`
+
+* Ngay khi bạn gõ một từ viết tắt đầu tiên trong chương (ví dụ: IoT - Internet of Things, CNN - Convolutional Neural Network), hãy mở file này ra và thêm vào danh sách theo đúng format của template. Đừng để đến cuối kỳ mới đi nhặt lại các từ viết tắt, rất dễ sót.
+
+---
+
+## 4. Workflow (Luồng làm việc) Hằng Ngày Khuyên Dùng
+
+1. **Mở Overleaf:** Mở file chương cần viết (ví dụ: `Chuong/Chuong_1.tex`).
+2. **Chuẩn bị tư liệu:** Đọc hướng dẫn/skeleton có sẵn trong file đó.
+3. **Hỏi AI:** Cung cấp thông tin kỹ thuật, kết quả thực nghiệm của bạn để AI trau chuốt câu từ (như hướng dẫn ở mục 2).
+4. **Insert vào Latex:** * Paste đoạn văn đã verify vào.
+* Thêm các lệnh định dạng Latex cơ bản như `\textbf{...}` (in đậm), `\begin{itemize}` (liệt kê), hoặc `\begin{equation}` nếu có công thức toán học.
+
+
+5. **Compile & Recheck:** Cứ viết xong 1 mục nhỏ (Subsection), hãy ấn `Ctrl + Enter` (hoặc nút Recompile) để xem hiển thị PDF bên phải xem có lỗi font, lỗi hình ảnh hay tràn lề không để sửa ngay lập tức.
+
+Cách tiếp cận này giúp bạn giữ được tiến độ cực nhanh nhờ AI hỗ trợ hành văn, nhưng toàn bộ cấu trúc luận văn, tính chính xác và tính học thuật vẫn hoàn toàn nằm trong tầm kiểm soát của bạn.
+```
+
+### PROMPT 2
+
+* my request:
+
+```
+thế việc tải về máy để cho ai agent đọc và làm việc theo workflow để tối ưu công việc như thế nào, sync nó lên overleaf để biên dịch ra sao
+```
+
+* AI response:
+
+```
+Để tối ưu hóa toàn bộ quy trình này bằng cách đưa dữ liệu về máy cục bộ (local machine) cho AI Agent xử lý, sau đó tự động đồng bộ ngược lại lên Overleaf, bạn có thể thiết lập một **Workflow Tự động hóa khép kín**.
+
+Dưới đây là hướng dẫn chi tiết từ việc thiết lập môi trường, cách kết nối AI Agent (ví dụ: dùng các extension AI hoặc script Python) cho đến cách đồng bộ mượt mà với Overleaf.
+
+---
+
+## BƯỚC 1: Đưa Project từ Overleaf về Máy cục bộ (Local)
+
+Overleaf hỗ trợ hai cách chính để bạn làm việc dưới local, nhưng để chạy Workflow tự động thì **Git là lựa chọn tối ưu nhất** (yêu cầu tài khoản Overleaf Premium – nếu bạn dùng mail trường như HUST thường sẽ có sẵn hoặc được giảm giá, hoặc bạn có thể xài thử nghiệm qua token).
+
+### Cách 1: Sử dụng Git (Khuyên dùng cho Tự động hóa)
+
+1. Trên dự án Overleaf, bấm vào nút **Menu** (góc trên cùng bên trái).
+2. Tìm đến mục **Git** và copy đường dẫn clone (có dạng `https://git.overleaf.com/xxxxxxxxx`).
+3. Mở Terminal dưới máy và chạy lệnh:
+```bash
+git clone https://git.overleaf.com/xxxxxxxxx do_an_tot_nghiep
+
+```
+
+
+
+*Bây giờ dự án của bạn đã nằm dưới máy với đúng file tree của Overleaf.*
+
+### Cách 2: Tải thủ công (Nếu dùng tài khoản miễn phí không có Git)
+
+* Bấm **Menu** -> **Download: Source** (Tải file `.zip` về và giải nén vào một thư mục dưới máy).
+
+---
+
+## BƯỚC 2: Thiết lập Môi trường làm việc & AI Agent dưới Local
+
+Để làm việc hiệu quả với các file `.tex`, bạn nên sử dụng **VS Code** hoặc **Neovim** kết hợp với các AI Tool chuyên dụng cho lập trình/viết lách.
+
+### 1. Công cụ khuyên dùng: VS Code + Extension "Aider" hoặc "Continue"
+
+* **Extension Continue.dev hoặc Cline:** Đây là các AI Assistant mã nguồn mở chạy trực tiếp trong VS Code. Bạn có thể kết nối nó với các Model mạnh về lý luận như GPT-4o, Claude 3.5 Sonnet, hoặc các model chạy local qua Ollama (DeepSeek-R1, Llama-3).
+* **Ưu điểm:** Bạn có thể dùng tính năng `@` để chỉ định AI đọc đúng file `Skeleton` hoặc file cấu trúc, sau đó ra lệnh cho nó điền nội dung vào file chương tương ứng.
+
+### 2. Thiết lập Workflow cho AI Agent đọc Skeleton và Điền nội dung
+
+Hãy tạo một file hướng dẫn (ví dụ: `ai_rules.md`) ở root để AI Agent luôn đọc trước khi làm việc. Quy trình prompt/ra lệnh cho Agent như sau:
+
+* **Bước 1 (Đọc bối cảnh):** Bản chất các file `.tex` là text thuần, AI Agent đọc rất tốt. Bạn ra lệnh cho Agent:
+> *"Hãy đọc file `Chuong/Chuong1_Skeleton.tex` để hiểu các mục cần viết và đọc file `Danh_sach_tai_lieu_tham_khao.bib` để biết các nguồn tài liệu tôi có."*
+
+
+* **Bước 2 (Cung cấp dữ liệu thô):** Bạn đưa cho AI Agent kết quả thí nghiệm, các gạch đầu dòng ý tưởng của bạn, hoặc các ghi chú thô bằng tiếng Việt.
+* **Bước 3 (Gen nội dung chuẩn LaTex):** Ra lệnh cho AI:
+> *"Dựa trên dữ liệu thô tôi cung cấp và yêu cầu của mục 1.2 trong file Skeleton, hãy viết nội dung hoàn chỉnh cho mục 1.2 bằng văn phong học thuật tiếng Việt. Đảm bảo: Duy trì định dạng LaTeX (sử dụng `\cite{}`, `\textbf{}` nếu cần), không tự bịa thông tin kỹ thuật, và viết trực tiếp vào file `Chuong/Chuong1.tex`."*
+
+
+
+---
+
+## BƯỚC 3: Đồng bộ ngược lại (Sync) lên Overleaf và Biên dịch
+
+Sau khi AI Agent đã viết xong dưới máy và bạn đã đọc soát, verify lại nội dung (đảm bảo không bị "văn phong AI" và đúng kỹ thuật), bạn tiến hành đồng bộ lên Overleaf.
+
+### Trường hợp 1: Nếu bạn dùng Git (Tự động & Chuyên nghiệp)
+
+Mỗi lần viết xong một mục hoặc một chương, bạn chỉ cần mở Terminal dưới máy và chạy các lệnh Git cơ bản:
+
+```bash
+git add .
+git commit -m "Update Chuong 1: Thêm nội dung mục 1.2 đã verify"
+git push origin master
+
+```
+
+**Cơ chế biên dịch trên Overleaf:** Khi bạn `git push`, toàn bộ mã nguồn dưới máy sẽ được đẩy thẳng lên đám mây của Overleaf. Bạn chỉ cần mở trình duyệt Overleaf ra, dự án sẽ tự động cập nhật code mới nhất. Bạn chỉ việc bấm nút **Recompile** (hoặc bật chế độ Auto-compile) trên Overleaf để nó sinh ra file PDF hoàn chỉnh.
+
+### Trường hợp 2: Nếu bạn dùng tài khoản Free (Không có Git)
+
+Bạn có thể sử dụng một công cụ bên thứ ba tên là **`overleaf-sync`** (một tool viết bằng Python khá phổ biến trên GitHub).
+
+1. Cài đặt qua terminal: `pip install overleaf-sync`
+2. Sử dụng lệnh `ol s` để đồng bộ thủ công giữa thư mục local và dự án trên web Overleaf mà không cần qua cổng Git Premium.
+
+---
+
+## Tóm tắt Workflow Tối ưu hằng ngày của bạn:
+
+```
+[Dữ liệu thô / Ý tưởng của bạn] 
+       │
+       ▼
+[AI Agent dưới máy (VS Code)] ──(Đọc Skeleton)──► [Gen nội dung chuẩn LaTeX vào file .tex]
+       │
+       ▼
+[Bạn Verify / Sửa lại bằng tay] (Xóa dấu vết AI, chuẩn hóa kiến thức)
+       │
+       ▼
+[Git Push / Sync] ──► [Overleaf Web] ──► [Bấm Recompile ra PDF]
+
+```
+
+**Mẹo nhỏ cho bạn:** Đừng để AI viết một lèo cả chương rồi mới đồng bộ. Hãy làm theo từng **Section/Subsection** (Mục nhỏ 2-300 chữ). Viết mục nào, verify mục đó, push lên Overleaf compile thử xem có lỗi cú pháp LaTeX (thiếu dấu đóng ngoặc `}`, lỗi công thức `$`,...) hay không rồi mới làm tiếp mục sau. Cách này giúp bạn kiểm soát lỗi cực tốt!
+```
+

@@ -1,0 +1,285 @@
+\documentclass[../DoAn.tex]{subfiles}
+\begin{document}
+Chương này có độ dài từ 9 đến 11 trang.
+
+Với phương pháp phân tích thiết kế hướng đối tượng, sinh viên sử dụng biểu đồ use case theo hướng dẫn của template này. Với các phương pháp khác, sinh viên trao đổi với giáo viên hướng dẫn để đổi tên và sắp xếp lại đề mục cho phù hợp. Ví dụ, thay vì sử dụng biểu đồ use case, sinh viên đi theo hướng tiếp cận Agile có thể dùng User Story.
+
+
+\textbf{Lưu ý}: Mỗi chương nên có thêm 1 đoạn mở đầu chương và kết thúc chương, mở đầu giới thiệu những nội dung sẽ trình bày trong chương, kết thúc tổng kết lại các nội dung đã trình bày
+
+\section{Khảo sát hiện trạng}
+\label{section:2.1}
+Thông thường, khảo sát chi tiết về hiện trạng và yêu cầu của phần mềm sẽ được lấy từ ba nguồn chính, đó là (i) người dùng/khách hàng, (ii) các hệ thống đã có, (iii) và các ứng dụng tương tự.
+Sinh viên cần tiến hành phân tích, so sánh, đánh giá chi tiết ưu nhược điểm của các sản phẩm/nghiên cứu hiện có. Sinh viên có thể lập bảng so sánh nếu cần thiết. Kết hợp với khảo sát người dùng/khách hàng (nếu có), sinh viên nêu và mô tả sơ lược các tính năng phần mềm quan trọng cần phát triển.
+
+\subsection{Phương pháp dựa trên ngưỡng (threshold)}
+\begin{enumerate}[label=\arabic*)]
+\item Logical reasoning for human activity recognition based on multisource data from wearable device \\
+    Mahmood Alsaadi, Ismail Keshta, Janjhyam Venkata Naga Ramesh, Divya Nimma, Mohammad Shabaz, Nirupma pathak, Pavitar Parkash Singh, Sherzod Kiyosov & Mukesh Soni 
+    \begin{itemize}
+        \item Nguồn: Nature
+        \item Bài toán:
+        \begin{itemize}
+            \item Vấn đề giải quyết: Khắc phục nhược điểm của các phương pháp học máy/học sâu truyền thống (tốn tài nguyên tính toán, cần nhiều dữ liệu huấn luyện, kém linh hoạt khi đổi người dùng) bằng cách sử dụng suy luận logic (logical reasoning) để nhận diện hành vi con người
+            \item Ngữ cảnh sử dụng: Theo dõi sức khỏe, hỗ trợ người khuyết tật và chăm sóc người cao tuổi. Nhận diện 12 hoạt động hàng ngày (đánh răng, vung tay, viết, gõ phím, đi bộ, chạy, lên/xuống cầu thang, đạp xe, đi thang cuốn, đứng yên)
+        \end{itemize}
+        \item Phần cứng:
+        \begin{itemize}
+            \item Loại thiết bị: Mạng lưới thiết bị đeo (wearable) kết nối đa nguồn
+            \item Cảm biến sử dụng: IMU 9 trục (Gia tốc kế, Con quay hồi chuyển, Từ kế)
+            \item Vị trí đặt cảm biến: 4 vị trí gồm Đầu (kính thông minh), Cổ tay trái (đồng hồ thông minh), Thắt lưng (điện thoại bỏ túi quần), và Bàn chân phải (module IMU gắn trên giày)
+            \item Tần số lấy mẫu (sampling rate): Đồng bộ ở mức 50 Hz cho tất cả các cảm biến
+            \item Mạch ở chân sử dụng vi điều khiển 8-bit Arduino Bluno (ATmega 328) kèm module IMU MPU9250 truyền qua Bluetooth 4.0. Dữ liệu dồn về máy tính (PC) làm trạm xử lý trung tâm
+        \end{itemize}
+        \item Phương pháp:
+        \begin{itemize}
+            \item Thuộc loại: Hybrid (Threshold-based / Suy luận logic kết hợp với Machine Learning nhẹ để tinh chỉnh)
+            \item Pipeline xử lý tổng quát: Thu thập dữ liệu đa nguồn $\Longrightarrow$ Tiền xử lý (Lọc nhiễu, tính RMS để phát hiện điểm bắt đầu) $\Longrightarrow$ Rút trích đặc trưng cơ bản $\Longrightarrow$ Phân loại bằng Cây logic (Logic Tree/Ontology reasoning) $\Longrightarrow$ Hiệu chỉnh ngưỡng thích ứng bằng hàm SVR (Cá nhân hóa)
+        \end{itemize}
+        \item Kỹ thuật chính:
+        \begin{itemize}
+            \item Tiền xử lý tín hiệu: Sử dụng Bộ lọc bù bậc 1 (First-order complementary filter) với trọng số gia tốc là 0.1 và Bộ lọc trung bình trượt (Mean smoothing filter) với cửa sổ = 5 để khử nhiễu tần số cao. Dùng tính toán tự tương quan (autocorrelation) để tìm chu kỳ chuyển động
+            \item Các đặc trưng (feature) được trích xuất: Căn bậc hai trung bình (RMS) dùng để phát hiện có chuyển động hay không. Trích xuất biên độ (Amplitude), tần số (Frequency), chu kỳ (Periodicity), và giá trị đỉnh (Peak) của các trục cảm biến
+            \item Mô hình sử dụng: Không dùng mô hình hộp đen. Phân loại bằng Ma trận quan hệ (Action judgment relationship matrix) và Cây logic (Logic Tree) - bản chất là các tập luật if-else dựa trên đặc tính vật lý của chuyển động. Ví dụ: đi lên cầu thang thì đỉnh gia tốc lớn hơn đi xuống, bước chân lên trước rồi mới đặt xuống. Dùng mô hình SVR (Support Vector Regression) ở pha offline để tự động tính toán lại các ngưỡng (threshold) cho phù hợp với thể trạng của người dùng mới
+        \end{itemize}
+        \item Tài nguyên & độ phù hợp với hệ nhúng
+        \begin{itemize}
+            \item Độ phức tạp tính toán: Cực thấp trong pha chạy thực tế (chỉ là các phép tính lọc nhiễu đơn giản và câu lệnh if-else)
+            \item Có phù hợp chạy trên vi điều khiển không?: Rất phù hợp. Bản thân node ở chân trong bài báo đã chạy trên chip ATmega328 (chip của Arduino Uno). Logic rule có thể được code thẳng bằng C/C++ trên ESP32 hoặc ARM Cortex-M rất dễ dàng.
+            \item Ước lượng tài nguyên: Cần bộ nhớ cực thấp so với mạng CNN (thể hiện qua biểu đồ thời gian và số lượng mẫu)
+            \item Real-time & Low Power: Hệ thống xử lý thời gian thực. Nhóm tác giả thừa nhận việc bật IMU và Bluetooth/Wi-Fi liên tục gây tốn pin nghiêm trọng, và đề xuất dùng cơ chế ngắt (polling/triggering) cho tương lai. Trạm biên (Edge) hiện tại đang là PC.
+        \end{itemize}
+        \item Kết quả:
+        \begin{itemize}
+            \item Độ chính xác: Trung bình đạt 90.8\% - 92.1\% trong bài toán nhận diện chéo người dùng (cross-person), cao hơn đáng kể so với SVM (84.7\%) và DT (80.2\%), và tiệm cận với CNN (91\%) nhưng tốn ít tài nguyên hơn hẳn
+            \item Tự thu thập trên 20 tình nguyện viên (10 nam, 10 nữ), lặp lại 100 lần cho mỗi hành động
+            \item Test thực tế: Đã test thực tế tại nhiều môi trường có nhiễu (hành lang, ký túc xá, ngoài trời)
+        \end{itemize}
+        \item Ưu điểm
+        \begin{itemize}
+            \item Zero-training (Lightweight): Không cần thu thập lượng lớn dữ liệu để train model. Phân tích dựa trên logic vật lý của hành vi. Giải quyết được điểm yếu chí mạng của Machine Learning là độ chính xác giảm mạnh khi áp dụng model cho một người dùng mới (cross-person)
+            \item Cơ chế thích ứng thông minh (Adaptive Threshold): Chỉ cần người dùng mới đi bộ thử 2 bước, hệ thống sẽ đo mức chênh lệch dữ liệu để tự động hiệu chỉnh lại toàn bộ tập ngưỡng (threshold) cho các hành động khác bằng hàm SVR
+        \end{itemize}
+        \item Nhược điểm
+        \begin{itemize}
+            \item Dựa dẫm quá nhiều vào 4 thiết bị đeo cùng lúc. Việc thu thập và đồng bộ hóa dữ liệu thời gian thực từ 4 nguồn không dây ở 50Hz là một "ác mộng" về tiêu thụ năng lượng và độ ổn định mạng trên thực tế
+            \item Thiết kế tập luật logic thủ công (rule-based) tuy nhẹ nhưng không mở rộng được cho các hành vi phức tạp phi quy luật
+        \end{itemize}
+        \item Khả năng triển khai thực tế:
+        \begin{itemize}
+            \item Áp dụng trực tiếp: Pipeline tiền xử lý bằng "Bộ lọc bù bậc 1 + Lọc trung bình" là công thức tuyệt vời cho vi điều khiển. Thuật toán dùng mức năng lượng ngắn hạn (Short-term energy/RMS) với cửa sổ trượt để đánh thức hệ thống cũng có thể code ngay trên ESP32/nRF52.
+            \item KHÔNG phù hợp: Mô hình truyền liên tục (streaming) dữ liệu raw từ 4 thiết bị về trạm trung tâm
+            \item Đề xuất cho đồ án: Nếu làm hệ thống phát hiện té ngã, hãy áp dụng tư duy "Logic vật lý". Thay vì đẩy raw data vào mạng nơ-ron, hãy dùng MCU tính toán các góc nghiêng, gia tốc rơi... Nếu RMS vượt ngưỡng → kích hoạt logic tree kiểm tra tư thế hiện tại → ra quyết định. Nó sẽ chạy mượt mà ngay cả trên chip Cortex-M0
+        \end{itemize}
+        \item Insight kỹ thuật
+        \begin{itemize}
+            \item Dùng hành động cơ bản để hiệu chỉnh (Calibration) cho hành động phức tạp: Ý tưởng dùng hành vi "Đi bộ" (dễ thu thập) làm mốc để tính ra độ lệch thể trạng người dùng, từ đó dùng hàm SVR nội suy ra các ngưỡng nhận diện cho 11 hành vi còn lại. Đây là một insight cực hay để giải bài toán "người già gầy yếu té ngã khác với thanh niên" mà không cần phải yêu cầu người già té ngã thử để lấy data.
+            \item Bộ lọc bù bậc 1 (Complementary Filter): Bài báo set trọng số gia tốc chỉ là 0.1 (tức là tin tưởng dữ liệu cũ/gyroscope 0.9). Điều này gợi ý rằng đối với các hành vi sinh hoạt mang tính chu kỳ (đi cầu thang, đi bộ), dữ liệu gia tốc tức thời thường rất nhiễu, cần tin tưởng vào xu hướng chuyển động mượt mà hơn.
+            \item RMS Triggering: Thay vì phải tính toán phân loại liên tục, tác giả so sánh RMS với ngưỡng. Dưới ngưỡng (không có chuyển động)  MCU ngủ. Vượt ngưỡng $\Longrightarrow$ mới chạy logic tree. Đây là cơ chế tiết kiệm pin kinh điển cho Edge AI.
+        \end{itemize}
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Phương pháp học máy}
+\begin{enumerate}[label=\arabic*)]
+    \item Nazar, Fakhra & Jalal, Ahmad. (2025). Wearable Sensors-Based Human Fall Detection Employing Cuckoo Search Optimization and Hidden Markov Model. 
+    \begin{itemize}
+        \item Nguồn: IEEE 
+        \item Kỹ thuật chính
+        \begin{itemize}
+            \item Tiền xử lý và phân đoạn: Khử nhiễu bằng kalman filter, sau đó phân đoạn bằng cửa sổ trượt
+            \item Các đặc trưng được trích xuất: Entropy Shannon, độ lệch chuẩn, năng lượng phổ, chiều dài tích lũy và biên độ tín hiệu
+            \item Kỹ thuật lựa chọn đặc trưng: sử dụng thuật toán tối ưu bầy đàn Cuckoo (CSO) kết hợp hàm đánh giá - fitness function dựa trên mô hình Random Forest
+            \item Mô hình sử dụng: Hidden Markov Models dạng Gaussian - mỗi hành động được đại diện bởi một mô hình HMM với 3 trạng thái ẩn (khởi đầu, thực hiện, kết thúc). 
+        \end{itemize}
+        \item Kết quả: Kết quả thực nghiệm trên tập dữ liệu KFall cho thấy hệ thống đạt độ chính xác ấn tượng lên tới 93,7\% khi phân loại 15 hành động té ngã khác nhau, khẳng định tính khả thi và độ tin cậy khi triển khai vào các hệ thống IoT giám sát y tế theo thời gian thực vượt trội hơn các phương pháp với mô hình truyền thống với độ chính xác 84.89\% và 89.37\%.
+        \item Ưu điểm:
+        \begin{itemize}
+            \item Sử dụng dụng bộ lọc Kalman giúp làm mịn dữ liệu của gia tốc kế rất tốt mà không mất đi đặc trưng của dữ liệu.
+            \item Thuật toán CSO giúp loại bỏ các đặc trưng dư thừa, giảm thiểu kích thước không gian đặc trưng trong khi vẫn bảo toàn được các thông tin mang tính phân biệt cao
+            \item HMM cực kỳ hiệu quả trong việc mô hình hóa sự phụ thuộc tuần tự theo thời gian, giúp hệ thống phân biệt tốt các chuyển động có động lực học gần giống nhau (như trượt chân, vấp ngã, ngất xỉu)
+            \item Kiến trúc module của HMM hỗ trợ khả năng diễn giải và mở rộng trong thời gian thực cho các hệ thống giám sát y tế
+        \end{itemize}
+        \item Nhược điểm:
+        \begin{itemize}
+            \item Quá trình lựa chọn đặc trưng bằng CSO yêu cầu phải huấn luyện chéo (3-fold cross-validation) mô hình Random Forest qua nhiều vòng lặp, dẫn đến chi phí tính toán ở pha huấn luyện (training phase) rất lớn. Pha tối ưu hóa (CSO) và huấn luyện HMM bằng thuật toán Baum-Welch.cực kỳ tốn tài nguyên và bắt buộc phải chạy offline trên máy tính hoặc Cloud server.
+            \item Tập dữ liệu gốc KFall cung cấp cả dữ liệu từ kế (magnetometer), nhưng nghiên cứu này đã loại bỏ hoàn toàn cảm biến này, có khả năng lãng phí một số thông tin quan trọng về góc định hướng của cơ thể
+            \item Việc sử dụng cửa sổ cố định 200 mẫu có thể gây ra một độ trễ nhỏ khi ứng dụng vào hệ thống cảnh báo tức thời cực kỳ khắt khe
+        \end{itemize}
+        \Tóm tắt:
+    \end{itemize}
+    \item Areal-time system for monitoring and classification of human falls on stairs using 2.4 GHz XBee3 micro modules with a tri-axial accelerometer and KNN algorithms
+    \begin{itemize}
+        \item Nguồn: Elservier
+        \item Bài toán:
+        \begin{itemize}
+            \item Vấn đề giải quyết: Vấn đề giải quyết: Theo dõi và phân loại các hoạt động của con người trên cầu thang (đi lên, đi xuống, quay người) và đặc biệt là phát hiện té ngã trên cầu thang
+            \item Bối cảnh sử dụng: Ứng dụng trong nhà thông minh (smart home), y tế, chăm sóc sức khỏe người già nhằm ngăn ngừa và cảnh báo hậu quả nghiêm trọng khi té ngã trên cầu thang
+        \end{itemize}
+        \item Phần cứng: 
+        \begin{itemize}
+            \item Loại thiết bị: Thiết bị đeo (wearable / mobile node) có kết nối không dây. Mạng truyền thông sử dụng module 2.4 GHz IEEE 802.15.4 XBee3
+            \item Cảm biến sử dụng: Gia tốc kế 3 trục (tri-axial accelerometer) GY-521
+            \item Vị trí đặt cảm biến: Đeo ở thắt lưng (waist) vì tính tiện dụng cao nhất sau khi đã thử nghiệm nghiệm cả ở ngực
+            \item Tần số lấy mẫu:Chu kỳ lấy mẫu là 100 ms (tương đương 10 Hz)
+        \end{itemize}
+        \item Phương pháp:
+        \begin{itemize}
+            \item Machine Learning nhẹ
+            \item Pipeline xử lý tổng quát: Dữ liệu gia tốc 3 trục thô ($a_x, a_y, a_z$) → Tính độ lớn vector tín hiệu (SVM) → Lọc nhiễu bằng bộ lọc EWMA → Cắt cửa sổ trượt (Moving Window) → Trích xuất đặc trưng (Feature extraction) → Phân loại bằng KNN
+        \end{itemize}
+        \item Kỹ thuật chính:
+        \begin{itemize}
+            \item Các đặc trưng (feature) được trích xuất: Trung bình (Mean), Giá trị lớn nhất (Max), Khoảng tứ phân vị (IQR), Độ lệch chuẩn (STDEV), Phương sai (Variance) và Biên độ Đỉnh-đỉnh (Peak-to-Peak). Lưu ý: Nghiên cứu chỉ ra rằng chỉ cần dùng đặc trưng Phương sai (Variance) là cho kết quả tốt nhất
+            \item Tiền xử lý tín hiệu: Cực kỳ hiệu quả. Sử dụng tính toán độ lớn vector tín hiệu (SVM) và bộ lọc Trung bình động trọng số mũ (EWMA) với hệ số $\alpha=0.3$ để làm mượt dữ liệu và khử nhiễu. Cửa sổ trượt được cấu hình rất nhỏ, chỉ 15 mẫu (samples) cho mỗi cửa sổ
+            \item Mô hình sử dụng: K-Nearest Neighbors (KNN). Ở đây KNN được thiết kế rất tối giản bằng cách đo khoảng cách bình phương (Euclidean distance) giữa đặc trưng đang xét và "bảng đặc trưng" (feature table) đã được tính sẵn trong pha offline.
+        \end{itemize}
+        \item Kết quả: 
+        \begin{itemize}
+            \item Độ chính xác: Độ chính xác: Đạt độ chính xác trung bình 88\%. Cụ thể: Đi lên cầu thang (89\%), quay người (95\%), đi xuống cầu thang (70\%), và riêng hành vi té ngã đạt 100\%
+            \item Dataset: Dữ liệu tự thu thập từ 1 nam thanh niên (22 tuổi, 173cm, 63kg) tại môi trường nhà ở thực tế (cầu thang 19 bậc), lặp lại 20 lần trong 20 ngày khác nhau
+            \item Loại test: Thử nghiệm thực tế nhưng có đệm an toàn để tránh chấn thương cho người giả lập
+            \item Điểm nổi bật về hiệu năng: Có khả năng phân loại hoàn hảo (100\%) cú ngã nguy hiểm chỉ bằng một đặc trưng duy nhất (Variance). Hệ thống giao tiếp không dây (XBee3) cực kỳ ổn định với tỷ lệ gửi nhận gói tin (Packet Delivery Ratio - PDR) đạt 100\% trong cả môi trường truyền thẳng (LoS) và có vật cản (NLoS)
+        \end{itemize}
+        \item Ưu điểm:
+        \begin{itemize}
+            \item Thuật toán đơn giản, quy trình trích xuất đặc trưng cực kỳ nhẹ, độ trễ hệ thống thấp (chỉ khoảng 1,41 giây cho toàn bộ một chuỗi truyền), đáp ứng tuyệt vời yêu cầu thời gian thực
+            \item Chỉ sử dụng 1 cảm biến gia tốc duy nhất (không cần con quay hồi chuyển), tối ưu chi phí và năng lượng
+            \item Kỹ thuật trích xuất duy nhất 1 đặc trưng (Variance) là đủ để phát hiện ngã với độ chính xác tuyệt đối (100\%), tiết kiệm tài nguyên tính toán ở mức tối đa cho embedded device
+            \item Cửa sổ trượt (15 samples) tương đương chỉ 1.5 giây lưu trữ, xử lý rất nhanh và tốn ít RAM
+            \item Tối ưu hóa giao tiếp mạng: Sử dụng sóng RF 2.4 GHz qua chuẩn IEEE 802.15.4 (XBee3) với cơ chế tránh nhiễu sóng Wi-Fi trong nhà
+            \item Độ tin cậy tuyệt đối với sự kiện nghiêm trọng nhất là ngã (100\%), không bỏ sót báo động khẩn cấp.
+        \end{itemize}
+        \item Nhược điểm
+        \begin{itemize}
+            \item Tỷ lệ nhận diện đúng đối với hành vi "đi xuống cầu thang" khá thấp (70\%), do giá trị phương sai của hoạt động này thường bị nhầm lẫn với hành vi đi lên hoặc sự kiện té ngã
+            \item Tính khái quát hóa chưa cao: Việc thực nghiệm chỉ được tiến hành trên một tình nguyện viên nam (22 tuổi) có sức khỏe tốt và có dùng đệm an toàn hỗ trợ khi ngã. Do đó, dữ liệu có thể chưa phản ánh hoàn toàn chính xác động lực học té ngã thực tế của người cao tuổi có hệ cơ xương khớp yếu.
+            \Bị nhầm lẫn khá lớn giữa đi xuống cầu thang và té ngã hoặc đi lên cầu thang (chỉ đạt 70\%) khi dùng đặc trưng Variance
+            \item Thiết kế hệ thống hiện tại bị bottleneck ở truyền thông: Gửi toàn bộ dữ liệu raw ở tần số 10Hz qua sóng không dây về máy tính xử lý. Việc này sẽ làm pin cạn kiệt rất nhanh, không khả thi cho wearable chạy pin dài ngày.
+        \end{itemize}
+        \item Khả năng triển khai thực tế:
+        \begin{itemize}
+            \item Áp dụng trực tiếp: Pipeline gồm lấy mẫu 10Hz → tính SVM → Lọc EWMA $(\alpha=0.3)$ $\Longrightarrow$ tính Variance trên mảng 15 phần tử $\Longrightarrow$ dùng KNN đơn giản để phân loại. Đoạn này có thể code bằng C thuần trên bất kỳ MCU nào (kể cả chip 8-bit).
+            \item KHÔNG phù hợp: Thiết kế kiến trúc truyền nhận liên tục qua XBee (Tx gửi dữ liệu thô đến Base Station liên tục)
+            \item Đề xuất tinh chỉnh cho Đồ án (Edge AI): Dịch chuyển toàn bộ khối xử lý tín hiệu và phân loại (Signal processing + KNN) từ máy tính (Base Station) xuống thẳng vi điều khiển thiết bị đeo (ESP32/nRF52). Vi điều khiển chỉ cần thức dậy tính toán mỗi 100ms, nếu phát hiện sự kiện ngã (Class 4) thì mới bật module Wi-Fi/BLE gửi cờ báo động (Interrupt-driven/Event-driven). Điều này giúp tiết kiệm 95\% năng lượng truyền tải không dây.
+        \end{itemize}
+        \item Insight kỹ thuật:
+        \begin{itemize}
+            \item Chiến lược lọc nhiễu EWMA thay vì Low-pass Filter: Bộ lọc EWMA với FSV $M_i=0.3×SVM_i+0.7×FSV M_{i-1}$. cực kỳ phù hợp cho hệ nhúng. Nó không cần mảng bộ đệm lằng nhằng như FIR filter, chỉ tốn 1 biến nhớ cho trạng thái cũ, thi hành chỉ trong 2 phép nhân và 1 phép cộng.
+            \item Đơn giản hóa mô hình nhận diện (KNN rút gọn): Phân loại bằng cách chỉ dùng đặc trưng Phương Sai (Variance) tính trên cửa sổ trượt 1.5s (15 mẫu ở 10Hz). Bạn hoàn toàn có thể làm một bảng tham chiếu (lookup table) chỉ gồm 4 giá trị ngưỡng trung tâm (centroids), và kiểm tra xem Variance mới nhất gần với trung tâm nào nhất. Thuật toán chạy trong độ phức tạp O(1) theo thời gian.
+            \item Tần số lấy mẫu 10Hz là đủ: Trái với quan điểm dùng IMU phải đọc dữ liệu 50Hz-100Hz, bài báo này chứng minh hoạt động ngã trên cầu thang hoàn toàn có thể bao quát tốt với tần số siêu thấp 10Hz (100ms). Nó giúp hệ thống edge sleep nhiều hơn.
+        \end{itemize}
+    \end{itemize}
+\end{enumerate}
+
+
+\subsection{Phương pháp học sâu}
+\begin{enumerate}[label=\arabic*)]
+    \item Fall Monitoring With Single IMU: A Large-Scale Dataset and a Novel Dual-Branch Network
+    \begin{itemize}
+        \item Bài toán:
+        \begin{itemize}
+            \item Vấn đề giải quyết: Xây dựng một tập dữ liệu quy mô lớn (FallTL) và phát triển mạng nơ-ron học sâu (STA-Net) để phát hiện sự kiện té ngã ngay trong pha "đang rơi" (pre-impact)
+            \item Ngữ cảnh sử dụng: Chăm sóc sức khỏe người cao tuổi, đặc biệt ứng dụng để kích hoạt các biện pháp bảo vệ chủ động như hệ thống túi khí (inflatable airbag) đeo trên người để giảm thiểu chấn thương trước khi va chạm
+        \end{itemize}
+        \item Phần cứng:
+        \begin{itemize}
+            \item Loại thiết bị: Thiết bị đeo (Wearable sensor nodes)
+            \item Cảm biến sử dụng: Node cảm biến thực tế trong bài dùng IMU 9 trục (Gia tốc kế, Con quay hồi chuyển, Từ kế) kết hợp với module ESP32-CAM. Tuy nhiên, kết quả phân tích cho thấy chỉ cần Gia tốc kế và Con quay hồi chuyển là đủ để đạt kết quả tốt
+            \item Vị trí đặt cảm biến: Tác giả đã thử nghiệm 8 vị trí khác nhau. Kết luận quan trọng: Ngực (Chest) và Thắt lưng (Waist) là 2 vị trí tối ưu nhất vì gần trọng tâm cơ thể, ít bị nhiễu bởi các chuyển động vung vẩy của chân tay
+            \item Tần số lấy mẫu: Dữ liệu phần cứng thu thập ở 200 Hz, nhưng các bài test trên dataset chuẩn (như KFall) thường sử dụng 100 Hz. Dữ liệu được cắt thành các cửa sổ trượt (sliding window) kích thước 1 giây với độ gối lên nhau (overlap) 50%
+        \end{itemize}
+        \item Phương pháp:
+        \begin{itemize}
+            \item Thuộc loại: Học sâu 
+            \item Pipeline xử lý tổng quát: Tín hiệu IMU thô $\Longrightarrow$ Chuẩn hóa Z-score $\Longrightarrow$ Cắt cửa sổ trượt 1 giây $\Longrightarrow$ Đưa vào mạng STA-Net (trích xuất đặc trưng không gian và thời gian song song) $\Longrightarrow$ Phân loại (Ngã / Không ngã)
+        \end{itemize}
+        \item Kỹ thuật chính:
+        \begin{itemize}
+            \item Các đặc trưng (feature) được trích xuất: Không trích xuất đặc trưng thủ công. Mô hình nạp trực tiếp dữ liệu thô (raw time-series)
+            \item Tiền xử lý tín hiệu: Rất cơ bản, chỉ dùng chuẩn hóa Z-score (đưa giá trị về trung bình = 0, độ lệch chuẩn = 1)
+            \item Mô hình sử dụng (STA-Net): Là một mạng nhánh kép (Dual-branch architecture)
+            \begin{itemize}
+                \item Nhánh Không gian (Spatial Branch): Dùng mạng chập 2D đa tỷ lệ (Multi-scale Conv2D) kết hợp khối chú ý kênh SE (Squeeze-and-Excitation) để tìm tương quan giữa các trục cảm biến
+                \item Nhánh Thời gian (Temporal Branch): Dùng Bi-GRU (Gated Recurrent Unit hai chiều) kết hợp thuật toán Criss-Cross Attention (CCA) để nắm bắt sự phụ thuộc dữ liệu theo thời gian
+            \end{itemize}
+            \item Hàm mất mát (Loss Function): Sử dụng Focal Loss để giải quyết bài toán mất cân bằng dữ liệu (số lượng mẫu hành động bình thường luôn áp đảo số lượng mẫu té ngã)
+        \end{itemize}
+        \item Tài nguyên & độ phù hợp với hệ nhúng
+        \begin{itemize}
+            \item Độ phức tạp tính toán: Cao.
+            \item Có phù hợp chạy trên vi điều khiển không?: Rất khó chạy trực tiếp trên các MCU cơ bản (như ESP32 thông thường) nếu không tối ưu hóa mạnh tay. Phù hợp hơn với Edge Gateway (Raspberry Pi) hoặc Smartphone
+            \item Ước lượng tài nguyên (Tác giả đã đo lường bằng PyTorch Mobile):
+            \begin{itemize}
+                \item Số lượng tham số: ~1.32 triệu (1,323.59K parameters)
+                \item Kích thước mô hình (RAM/Flash yêu cầu): 22.40 MB. Mức này vỡ mốc Flash/RAM của hầu hết vi điều khiển Cortex-M hoặc ESP32 tiêu chuẩn (thường chỉ 4-8MB).
+            \end{itemize}
+            \item Real-time & Low latency: Rất tốt. Thời gian suy luận (inference) chỉ tốn 70.30 ms cho 1 mẫu. Thời gian cảnh báo sớm (Lead time) đạt trung bình 456.69 ms trước khi chạm đất, hoàn toàn đủ chuẩn (yêu cầu >120 ms) để bung túi khí
+        \end{itemize}
+    \end{itemize}
+    \item Kết quả:
+    \begin{itemize}
+        \item Accuracy: Đối với phát hiện trước va chạm (PIFD), mô hình đạt ~94\% (trên tập FallTL) và 96.06\% (trên tập KFall). Phát hiện sau va chạm (FD) đạt ~98 - 99.28\%
+        \item Dataset: Tác giả tự build tập FallTL cực lớn (28.4 giờ dữ liệu, 45 người tham gia, 8 vị trí gắn cảm biến) và test thêm trên KFall, FallAllD
+        \item Test thực tế: Chỉ mô phỏng (người trẻ tự ngã trên nệm an toàn), chưa có dữ liệu ngã thực tế của người già.
+    \end{itemize}
+    \item Ưu điểm:
+    \begin{itemize}
+        \item Giải quyết xuất sắc bài toán PIFD (phát hiện trước khi ngã) với độ trễ suy luận siêu thấp (70ms), đáp ứng tốt yêu cầu thời gian thực
+        \item Kiến trúc Criss-Cross Attention (CCA) tính toán ma trận chú ý theo hình chữ thập thay vì toàn cục (self-attention), giúp tiết kiệm đáng kể tài nguyên mà vẫn giữ được độ chính xác
+        \item Khẳng định vị trí đặt cảm biến tại vùng thân (ngực/eo) là chìa khóa vàng cho bài toán té ngã
+    \end{itemize}
+    \item Nhược điểm:
+    \begin{itemize}
+        \item Kích thước mô hình (22.4 MB) là một điểm trừ lớn đối với hệ thống Wearable IoT đích thực. Nó không thể nạp thẳng vào vi điều khiển nằm trong thiết bị đeo tay/hông giá rẻ mà yêu cầu kết nối Bluetooth liên tục truyền về điện thoại/trạm biên để xử lý.
+        \item Dữ liệu ngã đều là giả lập từ người trẻ. Dáng ngã của người trẻ có tính phản xạ tự vệ cao, gia tốc lớn, khác hẳn với dáng ngã đổ sụp (syncopal fall) của người già yếu.
+    \end{itemize}
+    \item Khả năng triển khai thực tế:
+    \begin{itemize}
+        \item Áp dụng trực tiếp: Pipeline thu thập dữ liệu bằng ESP32 + IMU (sampling 100Hz) và cắt cửa sổ trượt 1 giây. Kiến trúc phần cứng này hoàn toàn có thể tái sử dụng.
+        \item KHÔNG phù hợp: Không thể đem nguyên file model 22.4 MB nhét vào ESP32
+        \item Đề xuất tối ưu (Cho đồ án Edge AI): Nếu muốn chạy on-device (trên vi điều khiển đeo ở hông), bạn phải cắt bỏ nhánh Bi-GRU (rất tốn RAM/tính toán), chỉ giữ lại nhánh CNN 1D + thuật toán Quantization (lượng tử hóa INT8 qua TensorFlow Lite for Microcontrollers). Đổi lại, bạn có thể phải chấp nhận bài toán chuyển từ PIFD (phát hiện trước va chạm) về FD (phát hiện sau va chạm) cho nhẹ tính toán.
+    \end{itemize}
+    \item Insight kỹ thuật:
+    \begin{itemize}
+        \item PIFD (Pre-impact) quan trọng hơn FD (Post-impact): Nếu làm đồ án y tế, hãy cân nhắc hướng đi PIFD. Phát hiện ông cụ đã ngã xuống đất rồi thì hậu quả (vỡ xương chậu, chấn thương sọ não) đã xảy ra. Phát hiện lúc cơ thể đang rơi để kích hoạt đệm khí đeo hông mới là xu hướng Edge AI bảo vệ chủ động thực sự
+        \item Hàm Focal Loss là "vũ khí bí mật" cho dữ liệu bất thường: Trong thực tế 1 ngày 24h, người dùng chỉ ngã trong chớp mắt (vài giây). Nếu train model bình thường, AI sẽ bị "lười" và luôn đoán là "không ngã" để ăn điểm accuracy. Focal loss sẽ trừng phạt nặng mô hình nếu nó đoán sai các sự kiện hiếm (cú ngã), ép mô hình phải chú ý học đặc trưng của cú ngã
+        \item Vứt bỏ la bàn (Từ kế/Magnetometer): Bài báo chứng minh dùng Gia tốc kế + Con quay hồi chuyển là đủ cho bài toán té ngã. La bàn thường xuyên bị nhiễu bởi từ trường kim loại trong nhà (cửa sắt, đồ điện), loại bỏ nó giúp giảm tải cảm biến và tiết kiệm pin cho Wearable
+    \end{itemize}
+\end{enumerate}
+
+\section{Tổng quan chức năng}
+\label{section:2.2}
+Phần \ref{section:2.2} này có nhiệm vụ tóm tắt các chức năng của phần mềm. Trong phần này, sinh viên lưu ý chỉ mô tả chức năng mức cao (tổng quan) mà không đặc tả chi tiết cho từng chức năng. Đặc tả chi tiết được trình bày trong phần \ref{section:2.3}.
+
+\subsection{Biểu đồ use case tổng quát}
+\label{subsection:2.2.1}
+Sinh viên vẽ biểu đồ use case tổng quan và giải thích các tác nhân tham gia là gì, nêu vai trò của từng tác nhân, và mô tả ngắn gọn các use case chính.
+
+\subsection{Biểu đồ use case phân rã XYZ}
+\label{subsection:2.2.2}
+Với mỗi use case mức cao trong biểu đồ use case tổng quan, sinh viên tạo một mục riêng như mục \ref{subsection:2.2.2} và tiến hành phân rã use case đó. Lưu ý tên use case cần phân rã trong biểu đồ use case tổng quan phải khớp với tên đề mục.
+
+Trong mỗi mục như vậy, sinh viên vẽ và giải thích ngắn gọn các use case phân rã.
+
+\subsection{Quy trình nghiệp vụ}
+\label{subsection:2.2.3}
+Nếu sản phẩm/hệ thống cần xây dựng có quy trình nghiệp vụ quan trọng/đáng chú ý, sinh viên cần mô tả và vẽ biểu đồ hoạt động minh họa quy trình nghiệp vụ đó. Sinh viên lưu ý đây không phải là luồng sự kiện của từng use case, mà là luồng hoạt động kết hợp nhiều use case để thực hiện một nghiệp vụ nào đó.
+
+Ví dụ, một hệ thống quản lý thư viện có quy trình nghiệp vụ mượn trả với mô tả sơ bộ như sau: Sinh viên làm thẻ mượn, sau đó sinh viên đăng ký mượn sách, thủ thư cho mượn, và cuối cùng sinh viên trả lại sách cho thư viện. Một hệ thống có thể có một vài quy trình nghiệp vụ quan trọng như vậy.
+\section{Đặc tả chức năng}
+\label{section:2.3}
+Sinh viên lựa chọn từ 4 đến 7 use case quan trọng nhất của đồ án để đặc tả chi tiết. Mỗi đặc tả bao gồm ít nhất các thông tin sau: (i) Tên use case, (ii) Luồng sự kiện (chính và phát sinh), (iii) Tiền điều kiện, và (iv) Hậu điều kiện. Sinh viên chỉ vẽ bổ sung biểu đồ hoạt động khi đặc tả use case phức tạp.
+\subsection{Đặc tả use case A}
+\hfill
+\subsection{Đặc tả use case B}
+\hfill
+
+\section{Yêu cầu phi chức năng}
+\label{section:2.4}
+Trong phần này, sinh viên đưa ra các yêu cầu khác nếu có, bao gồm các yêu cầu phi chức năng như hiệu năng, độ tin cậy, tính dễ dùng, tính dễ bảo trì, hoặc các yêu cầu về mặt kỹ thuật như về CSDL, công nghệ sử dụng, v.v.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}
