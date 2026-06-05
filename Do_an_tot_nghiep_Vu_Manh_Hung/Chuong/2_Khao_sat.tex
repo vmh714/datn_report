@@ -15,7 +15,7 @@ Sinh viên cần tiến hành phân tích, so sánh, đánh giá chi tiết ưu 
 \subsection{Phương pháp dựa trên ngưỡng (threshold)}
 \begin{enumerate}[label=\arabic*)]
 \item Logical reasoning for human activity recognition based on multisource data from wearable device \\
-    Mahmood Alsaadi, Ismail Keshta, Janjhyam Venkata Naga Ramesh, Divya Nimma, Mohammad Shabaz, Nirupma pathak, Pavitar Parkash Singh, Sherzod Kiyosov & Mukesh Soni 
+    Mahmood Alsaadi, Ismail Keshta, Janjhyam Venkata Naga Ramesh, Divya Nimma, Mohammad Shabaz, Nirupma pathak, Pavitar Parkash Singh, Sherzod Kiyosov \& Mukesh Soni 
     \begin{itemize}
         \item Nguồn: Nature
         \item Bài toán:
@@ -42,12 +42,12 @@ Sinh viên cần tiến hành phân tích, so sánh, đánh giá chi tiết ưu 
             \item Các đặc trưng (feature) được trích xuất: Căn bậc hai trung bình (RMS) dùng để phát hiện có chuyển động hay không. Trích xuất biên độ (Amplitude), tần số (Frequency), chu kỳ (Periodicity), và giá trị đỉnh (Peak) của các trục cảm biến
             \item Mô hình sử dụng: Không dùng mô hình hộp đen. Phân loại bằng Ma trận quan hệ (Action judgment relationship matrix) và Cây logic (Logic Tree) - bản chất là các tập luật if-else dựa trên đặc tính vật lý của chuyển động. Ví dụ: đi lên cầu thang thì đỉnh gia tốc lớn hơn đi xuống, bước chân lên trước rồi mới đặt xuống. Dùng mô hình SVR (Support Vector Regression) ở pha offline để tự động tính toán lại các ngưỡng (threshold) cho phù hợp với thể trạng của người dùng mới
         \end{itemize}
-        \item Tài nguyên & độ phù hợp với hệ nhúng
+        \item Tài nguyên \& độ phù hợp với hệ nhúng
         \begin{itemize}
             \item Độ phức tạp tính toán: Cực thấp trong pha chạy thực tế (chỉ là các phép tính lọc nhiễu đơn giản và câu lệnh if-else)
             \item Có phù hợp chạy trên vi điều khiển không?: Rất phù hợp. Bản thân node ở chân trong bài báo đã chạy trên chip ATmega328 (chip của Arduino Uno). Logic rule có thể được code thẳng bằng C/C++ trên ESP32 hoặc ARM Cortex-M rất dễ dàng.
             \item Ước lượng tài nguyên: Cần bộ nhớ cực thấp so với mạng CNN (thể hiện qua biểu đồ thời gian và số lượng mẫu)
-            \item Real-time & Low Power: Hệ thống xử lý thời gian thực. Nhóm tác giả thừa nhận việc bật IMU và Bluetooth/Wi-Fi liên tục gây tốn pin nghiêm trọng, và đề xuất dùng cơ chế ngắt (polling/triggering) cho tương lai. Trạm biên (Edge) hiện tại đang là PC.
+            \item Real-time \& Low Power: Hệ thống xử lý thời gian thực. Nhóm tác giả thừa nhận việc bật IMU và Bluetooth/Wi-Fi liên tục gây tốn pin nghiêm trọng, và đề xuất dùng cơ chế ngắt (polling/triggering) cho tương lai. Trạm biên (Edge) hiện tại đang là PC.
         \end{itemize}
         \item Kết quả:
         \begin{itemize}
@@ -82,7 +82,7 @@ Sinh viên cần tiến hành phân tích, so sánh, đánh giá chi tiết ưu 
 
 \subsection{Phương pháp học máy}
 \begin{enumerate}[label=\arabic*)]
-    \item Nazar, Fakhra & Jalal, Ahmad. (2025). Wearable Sensors-Based Human Fall Detection Employing Cuckoo Search Optimization and Hidden Markov Model. 
+    \item Nazar, Fakhra \& Jalal, Ahmad. (2025). Wearable Sensors-Based Human Fall Detection Employing Cuckoo Search Optimization and Hidden Markov Model. 
     \begin{itemize}
         \item Nguồn: IEEE 
         \item Kỹ thuật chính
@@ -106,7 +106,7 @@ Sinh viên cần tiến hành phân tích, so sánh, đánh giá chi tiết ưu 
             \item Tập dữ liệu gốc KFall cung cấp cả dữ liệu từ kế (magnetometer), nhưng nghiên cứu này đã loại bỏ hoàn toàn cảm biến này, có khả năng lãng phí một số thông tin quan trọng về góc định hướng của cơ thể
             \item Việc sử dụng cửa sổ cố định 200 mẫu có thể gây ra một độ trễ nhỏ khi ứng dụng vào hệ thống cảnh báo tức thời cực kỳ khắt khe
         \end{itemize}
-        \Tóm tắt:
+        \item Tóm tắt:
     \end{itemize}
     \item Areal-time system for monitoring and classification of human falls on stairs using 2.4 GHz XBee3 micro modules with a tri-axial accelerometer and KNN algorithms
     \begin{itemize}
@@ -154,7 +154,7 @@ Sinh viên cần tiến hành phân tích, so sánh, đánh giá chi tiết ưu 
         \begin{itemize}
             \item Tỷ lệ nhận diện đúng đối với hành vi "đi xuống cầu thang" khá thấp (70\%), do giá trị phương sai của hoạt động này thường bị nhầm lẫn với hành vi đi lên hoặc sự kiện té ngã
             \item Tính khái quát hóa chưa cao: Việc thực nghiệm chỉ được tiến hành trên một tình nguyện viên nam (22 tuổi) có sức khỏe tốt và có dùng đệm an toàn hỗ trợ khi ngã. Do đó, dữ liệu có thể chưa phản ánh hoàn toàn chính xác động lực học té ngã thực tế của người cao tuổi có hệ cơ xương khớp yếu.
-            \Bị nhầm lẫn khá lớn giữa đi xuống cầu thang và té ngã hoặc đi lên cầu thang (chỉ đạt 70\%) khi dùng đặc trưng Variance
+            \item Bị nhầm lẫn khá lớn giữa đi xuống cầu thang và té ngã hoặc đi lên cầu thang (chỉ đạt 70\%) khi dùng đặc trưng Variance
             \item Thiết kế hệ thống hiện tại bị bottleneck ở truyền thông: Gửi toàn bộ dữ liệu raw ở tần số 10Hz qua sóng không dây về máy tính xử lý. Việc này sẽ làm pin cạn kiệt rất nhanh, không khả thi cho wearable chạy pin dài ngày.
         \end{itemize}
         \item Khả năng triển khai thực tế:
@@ -205,7 +205,7 @@ Sinh viên cần tiến hành phân tích, so sánh, đánh giá chi tiết ưu 
             \end{itemize}
             \item Hàm mất mát (Loss Function): Sử dụng Focal Loss để giải quyết bài toán mất cân bằng dữ liệu (số lượng mẫu hành động bình thường luôn áp đảo số lượng mẫu té ngã)
         \end{itemize}
-        \item Tài nguyên & độ phù hợp với hệ nhúng
+        \item Tài nguyên \& độ phù hợp với hệ nhúng
         \begin{itemize}
             \item Độ phức tạp tính toán: Cao.
             \item Có phù hợp chạy trên vi điều khiển không?: Rất khó chạy trực tiếp trên các MCU cơ bản (như ESP32 thông thường) nếu không tối ưu hóa mạnh tay. Phù hợp hơn với Edge Gateway (Raspberry Pi) hoặc Smartphone
@@ -214,7 +214,7 @@ Sinh viên cần tiến hành phân tích, so sánh, đánh giá chi tiết ưu 
                 \item Số lượng tham số: ~1.32 triệu (1,323.59K parameters)
                 \item Kích thước mô hình (RAM/Flash yêu cầu): 22.40 MB. Mức này vỡ mốc Flash/RAM của hầu hết vi điều khiển Cortex-M hoặc ESP32 tiêu chuẩn (thường chỉ 4-8MB).
             \end{itemize}
-            \item Real-time & Low latency: Rất tốt. Thời gian suy luận (inference) chỉ tốn 70.30 ms cho 1 mẫu. Thời gian cảnh báo sớm (Lead time) đạt trung bình 456.69 ms trước khi chạm đất, hoàn toàn đủ chuẩn (yêu cầu >120 ms) để bung túi khí
+            \item Real-time \& Low latency: Rất tốt. Thời gian suy luận (inference) chỉ tốn 70.30 ms cho 1 mẫu. Thời gian cảnh báo sớm (Lead time) đạt trung bình 456.69 ms trước khi chạm đất, hoàn toàn đủ chuẩn (yêu cầu >120 ms) để bung túi khí
         \end{itemize}
     \end{itemize}
     \item Kết quả:

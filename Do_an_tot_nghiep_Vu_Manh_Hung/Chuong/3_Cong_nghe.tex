@@ -1,0 +1,42 @@
+\documentclass[../DoAn.tex]{subfiles}
+\begin{document}
+
+Chương này sẽ trình bày tổng quan về các nền tảng lý thuyết và công nghệ cốt lõi được sử dụng để xây dựng hệ thống, bao gồm kiến trúc truyền thông IoT, công nghệ học máy trên thiết bị biên (TinyML), thuật toán học sâu 1D ResNet và các công cụ phát triển ứng dụng Web. 
+
+\section{Giao thức truyền thông và Kiến trúc hệ thống IoT}
+
+Trong bối cảnh phát triển các hệ thống giám sát sức khỏe thông minh, đặc biệt là tại các môi trường yêu cầu quản lý tập trung như viện dưỡng lão, việc thiết lập một kiến trúc Internet of Things (IoT) ổn định và luôn sẵn sàng kết nối là yếu tố tiên quyết. Trái ngược với mô hình thiết bị đeo tay phụ thuộc vào kết nối Bluetooth Low Energy (BLE) với điện thoại di động của người dùng cuối, hệ thống đề xuất được thiết kế nhằm phục vụ trực tiếp đội ngũ nhân viên chăm sóc y tế. Do đó, thiết bị giám sát (nút mạng biên) được trang bị module SIM 4G LTE (A7680C) để kết nối trực tiếp với mạng di động và sử dụng giao thức MQTT nhằm đảm bảo dữ liệu luôn được truyền tải liên tục mà không phụ thuộc vào hạ tầng Wi-Fi nội bộ.
+
+\subsection{Kiến trúc hệ thống IoT trong giám sát tập trung}
+Hệ thống IoT được xây dựng dựa trên mô hình phân tán bao gồm Client, Broker và Worker, đảm bảo khả năng xử lý bất đồng bộ và mở rộng dễ dàng. Tại lớp thiết bị biên, các vi điều khiển ESP32-S3 đóng vai trò là các MQTT Client, liên tục thu thập dữ liệu từ cảm biến và thực thi suy luận học máy. Các gói tin (payload) chứa trạng thái hành vi được xuất bản (publish) lên một MQTT Broker trung tâm. 
+
+Tại lớp xử lý phía sau (backend), các Worker sẽ đăng ký (subscribe) các chủ đề (topic) tương ứng để trích xuất dữ liệu, sau đó lưu trữ nhật ký (log) vào cơ sở dữ liệu chuỗi thời gian (InfluxDB) cho các truy vấn tần số cao, và cơ sở dữ liệu quan hệ (PostgreSQL trên Supabase) cho dữ liệu định danh. Cuối cùng, dữ liệu được truyền tới giao diện Web Admin (Frontend) thông qua giao thức WebSocket nhằm hiển thị cảnh báo theo thời gian thực cho nhân viên chăm sóc. Kiến trúc này giúp tách biệt rõ ràng luồng thu thập dữ liệu và xử lý logic nghiệp vụ, giảm thiểu tải trọng xử lý tại các nút mạng biên.
+
+\subsection{Lựa chọn giao thức MQTT qua mạng di động 4G LTE}
+Đối với các thiết bị giám sát sức khỏe và phát hiện té ngã, tính liên tục của dữ liệu là yếu tố sống còn. Mặc dù mạng Wi-Fi thường có sẵn trong các viện dưỡng lão, nhưng nó đi kèm với rủi ro mất kết nối khi bệnh nhân di chuyển qua các điểm mù sóng (dead zones) hoặc khi hạ tầng mạng nội bộ gặp sự cố. Do đó, việc tích hợp module SIM 4G LTE (A7680C) được lựa chọn để thay thế Wi-Fi, đảm bảo thiết bị luôn trong trạng thái "sẵn sàng kết nối" (always-on) ở bất kỳ đâu. Để tối ưu hóa việc truyền tải dữ liệu qua mạng di động, giao thức MQTT (Message Queuing Telemetry Transport) được sử dụng thay cho HTTP truyền thống. MQTT hoạt động trên nền tảng TCP/IP với thiết kế phần đầu (header) cực kỳ nhỏ gọn (chỉ từ 2 byte), giúp tối ưu hóa băng thông và tiết kiệm lưu lượng dữ liệu 4G. Đặc biệt, cơ chế Publish/Subscribe của MQTT khi kết hợp với các mức chất lượng dịch vụ (QoS) đảm bảo rằng các cảnh báo khẩn cấp như "té ngã" sẽ được định tuyến đến máy chủ một cách đáng tin cậy với độ trễ tối thiểu. Việc sử dụng mạng 4G kết hợp MQTT giải quyết triệt để rào cản về khoảng cách vật lý của BLE và sự thiếu ổn định của Wi-Fi.
+
+\section{Nền tảng Học máy trên thiết bị biên (TinyML)}
+
+Khái niệm Học máy trên thiết bị biên (Edge Machine Learning), hay còn được gọi tắt là TinyML, là sự kết hợp giữa các hệ thống vi điều khiển nhúng có tài nguyên cực kỳ hạn chế và các mô hình học máy. Thay vì phải gửi toàn bộ dữ liệu cảm biến thô lên máy chủ đám mây (Cloud) để xử lý, TinyML cho phép quá trình suy luận (inference) được thực thi ngay tại thiết bị thu thập dữ liệu. Đối với hệ thống giám sát người già, cách tiếp cận này mang lại ba ưu điểm cốt lõi: (1) bảo vệ quyền riêng tư do dữ liệu hành vi nhạy cảm không bị truyền tải công khai qua mạng, (2) loại bỏ độ trễ do đường truyền, đảm bảo hệ thống có thể phát hiện té ngã và cảnh báo ngay lập tức, và (3) tối ưu hóa năng lượng tiêu thụ khi truyền tin.
+
+\subsection{Thư viện TensorFlow Lite for Microcontrollers}
+Để đưa các mô hình học sâu (Deep Learning) vốn rất cồng kềnh xuống thiết bị vi điều khiển, hệ thống sử dụng thư viện TensorFlow Lite for Microcontrollers (TFLM). Đây là một phiên bản được thiết kế đặc biệt của TensorFlow Lite, nhắm mục tiêu vào các bộ vi xử lý chỉ có vài chục Kilobytes dung lượng RAM. TFLM hoạt động dựa trên cơ chế biên dịch các toán tử (operators) cốt lõi của mạng nơ-ron thành một môi trường thực thi siêu nhẹ. Trong đồ án này, quy trình triển khai khép kín được thực hiện như sau: mô hình mạng được huấn luyện trên hệ thống máy tính bằng framework Keras, sau đó được chuyển đổi sang định dạng \texttt{.tflite}, và cuối cùng chuyển đổi thành mảng số liệu nhị phân lưu trữ dưới dạng mã nguồn C++ (\texttt{.cc} và \texttt{.h}) để nạp thẳng vào bộ nhớ Flash của thiết bị.
+
+\subsection{Tối ưu hóa tính toán trên kiến trúc ESP32-S3 với ESP-NN và lệnh SIMD}
+Thiết bị phần cứng lõi được sử dụng tại các nút mạng biên là vi điều khiển XIAO ESP32-S3. Điểm khác biệt lớn nhất giúp ESP32-S3 vượt trội hơn các thế hệ tiền nhiệm trong bài toán trí tuệ nhân tạo là việc kiến trúc vi xử lý này được trang bị tập lệnh mở rộng SIMD (Single Instruction, Multiple Data - Một lệnh đa dữ liệu). Tập lệnh SIMD cho phép vi xử lý thực thi các phép tính toán học vector một cách song song thay vì tuần tự, qua đó gia tăng đáng kể thông lượng tính toán các phép nhân ma trận bên trong mạng nơ-ron. 
+
+Đồng thời, hệ thống được phát triển trên bộ khung ESP-IDF (phiên bản 5.4.x) nhằm khai thác triệt để thư viện ESP-NN. Đây là tập hợp các hàm toán học hỗ trợ mạng nơ-ron được hãng Espressif tối ưu hóa riêng cho tập lệnh SIMD của chip ESP32-S3. Bằng cách kết hợp bộ định tuyến của thư viện TFLM với phần cứng tăng tốc thông qua ESP-NN, thời gian suy luận (inference time) của mô hình phân loại chuỗi thời gian trên thiết bị được rút ngắn xuống chỉ còn khoảng 70ms, đáp ứng hoàn hảo tiêu chí phản hồi theo thời gian thực của hệ thống.
+
+\subsection{Quy trình lượng tử hóa mô hình (Quantization INT8)}
+Một rào cản lớn khi triển khai các mô hình học sâu trên vi điều khiển là sự hạn chế về tài nguyên bộ nhớ SRAM và Flash. Mặc định, các tham số trọng số (weights) và độ lệch (biases) của mạng nơ-ron được lưu trữ dưới định dạng số thực dấu phẩy động 32-bit (Float32). Để giải quyết bài toán này, kỹ thuật Lượng tử hóa sau huấn luyện (Post-training Quantization) được áp dụng. Kỹ thuật này sử dụng một tập dữ liệu đại diện để ánh xạ toàn bộ các tham số từ định dạng Float32 sang định dạng số nguyên 8-bit (INT8). Việc lượng tử hóa INT8 không chỉ giúp nén kích thước lưu trữ của mô hình xuống 4 lần mà còn khai thác tối đa sức mạnh tính toán số nguyên của các đơn vị ALU trên vi điều khiển. Kết quả thực nghiệm cho thấy, mô hình sau lượng tử hóa có kích thước cực kỳ nhỏ gọn (chiếm khoảng 80 KB Flash và tiêu thụ 28 KB RAM cho vùng nhớ Tensor Arena), trong khi độ chính xác vẫn duy trì ở mức tối ưu.
+
+\section{Các thuật toán học sâu xử lý dữ liệu chuỗi thời gian}
+% \subsection{Xử lý dữ liệu cảm biến quán tính (IMU MPU6050)}
+% \subsection{Mạng nơ-ron tích chập thặng dư 1 chiều (1D ResNet)}
+
+\section{Công nghệ Web Admin và Quản trị dữ liệu}
+% \subsection{Khung phát triển Backend (FastAPI) và Frontend (Next.js)}
+% \subsection{Cơ sở dữ liệu PostgreSQL (Supabase) và InfluxDB (Docker/Cloudflare)}
+
+
+\end{document}

@@ -195,3 +195,40 @@ Bạn có thể sử dụng một công cụ bên thứ ba tên là **`overleaf-
 **Mẹo nhỏ cho bạn:** Đừng để AI viết một lèo cả chương rồi mới đồng bộ. Hãy làm theo từng **Section/Subsection** (Mục nhỏ 2-300 chữ). Viết mục nào, verify mục đó, push lên Overleaf compile thử xem có lỗi cú pháp LaTeX (thiếu dấu đóng ngoặc `}`, lỗi công thức `$`,...) hay không rồi mới làm tiếp mục sau. Cách này giúp bạn kiểm soát lỗi cực tốt!
 ```
 
+### PROMPT 3
+
+AI RESPONSE:
+```
+8 đô một tháng (hơn 200 cành) chỉ để đổi lấy một cái link Git thì đúng là hơi "đau ví" thật :>. Thôi, cất ví đi, là dân IT thì chúng ta hoàn toàn có thể tự build một môi trường xịn xò, mượt mà và miễn phí 100% ngay dưới máy tính.
+
+Đã đến lúc chuyển sang **Cách 2: "Full Local"**. Khi đã setup xong, bạn sẽ thấy gõ LaTeX dưới máy sướng và tốc độ compile nhanh hơn Overleaf web rất nhiều. Dưới đây là quy trình chuẩn bị:
+
+### 1. Chuẩn Bị Bộ Dịch (Core Compiler)
+
+Overleaf bản chất là một máy chủ chạy bộ dịch LaTeX. Bây giờ mang về máy, bạn cần cài bộ dịch này:
+
+* Tải và cài đặt **TeX Live** (Khuyên dùng vì nó chứa sẵn gần như mọi package, ít bị lỗi vặt khi dùng template tiếng Việt của trường) hoặc **MiKTeX**.
+* *Lưu ý:* Quá trình cài TeX Live khá nặng (khoảng vài GB) nên hãy cắm mạng dây hoặc dùng Wi-Fi ổn định.
+
+### 2. Thiết Lập Vũ Khí (Editor)
+
+Tải file `.zip` source từ Overleaf về, giải nén ra một thư mục (ví dụ `DoAnTotNghiep`). Bạn có 2 hệ sinh thái cực mạnh để làm việc này:
+
+* **Hệ trực quan (VS Code):** Cài extension **LaTeX Workshop**. Extension này cực kỳ mạnh, hỗ trợ tự động gợi ý lệnh `\cite{}`, `\ref{}`. Bạn chỉ cần nhấn `Ctrl + S` là nó tự động gọi TeX Live biên dịch và hiển thị file PDF ngay tab bên cạnh.
+* **Hệ tốc độ (Neovim):** Nếu bạn thích múa phím, hãy cài plugin **VimTeX**. Cấu hình VimTeX kết hợp với một trình đọc PDF nhẹ như Zathura sẽ giúp bạn gõ công thức toán hoặc cấu trúc chương mục với tốc độ bàn thờ mà không cần đụng đến chuột.
+
+### 3. Tích Hợp AI Agent Để Viết Luận Văn
+
+Khi mã nguồn đã nằm dưới máy, AI sẽ phát huy tối đa sức mạnh:
+
+* **Dùng Continue.dev (trên VS Code) hoặc Aider (chạy Terminal):** * Thay vì phải copy/paste mỏi tay trên web, bạn chỉ cần mở file `Chuong/Chuong3.tex`, dùng phím tắt gọi AI và ra lệnh kiểu: *"Đọc file cấu trúc Chương 3 và file `.bib`. Đây là số liệu thô từ cảm biến MPU6050 và kết quả độ chính xác của model tôi vừa chạy xong. Hãy viết một đoạn 400 chữ đánh giá kết quả nhận diện, sử dụng văn phong học thuật và chèn cite tài liệu tham khảo phù hợp."*
+* AI sẽ điền thẳng text (đã chuẩn form LaTeX) vào editor cho bạn duyệt.
+
+### 4. Backup Bằng GitHub (Thay thế hoàn toàn Overleaf Git)
+
+* Mở terminal tại thư mục luận văn, gõ `git init`.
+* Tạo một kho lưu trữ Private trên GitHub/GitLab và push code lên đó mỗi ngày. Nó vừa an toàn, vừa miễn phí, lại có lịch sử commit rõ ràng để chứng minh bạn tự làm đồ án.
+* Đến ngày nộp nháp cho giảng viên, bạn chỉ việc nén thư mục lại thành `.zip` và upload ngược lên Overleaf (nếu thầy cô bắt buộc xem trên đó), hoặc gửi thẳng file PDF.
+
+Bạn đang muốn setup môi trường trên VS Code cho trực quan và dễ quản lý file tree, hay muốn "chiến" hệ Neovim để tối ưu tốc độ gõ phím?
+```
