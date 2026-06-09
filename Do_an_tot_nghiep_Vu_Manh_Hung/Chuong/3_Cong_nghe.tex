@@ -1,42 +1,192 @@
 \documentclass[../DoAn.tex]{subfiles}
 \begin{document}
 
-Chương này sẽ trình bày tổng quan về các nền tảng lý thuyết và công nghệ cốt lõi được sử dụng để xây dựng hệ thống, bao gồm kiến trúc truyền thông IoT, công nghệ học máy trên thiết bị biên (TinyML), thuật toán học sâu 1D ResNet và các công cụ phát triển ứng dụng Web. 
+Chương này sẽ giới thiệu chi tiết về các nền tảng lý thuyết và công nghệ cốt lõi được ứng dụng để xây dựng hệ thống giám sát người cao tuổi. Nhằm đảm bảo tính rõ ràng, nội dung được chia thành hai nhóm chính: nhóm công nghệ phần cứng và thuật toán nhận diện (phía thiết bị biên), và nhóm công nghệ phần mềm (phía máy chủ và ứng dụng quản lý).
 
-\section{Giao thức truyền thông và Kiến trúc hệ thống IoT}
+\section{Cơ sở lý thuyết về Nhận diện hành vi và Phát hiện té ngã dựa trên cảm biến quán tính (IMU)}
+\label{section:3.1}
 
-Trong bối cảnh phát triển các hệ thống giám sát sức khỏe thông minh, đặc biệt là tại các môi trường yêu cầu quản lý tập trung như viện dưỡng lão, việc thiết lập một kiến trúc Internet of Things (IoT) ổn định và luôn sẵn sàng kết nối là yếu tố tiên quyết. Trái ngược với mô hình thiết bị đeo tay phụ thuộc vào kết nối Bluetooth Low Energy (BLE) với điện thoại di động của người dùng cuối, hệ thống đề xuất được thiết kế nhằm phục vụ trực tiếp đội ngũ nhân viên chăm sóc y tế. Do đó, thiết bị giám sát (nút mạng biên) được trang bị module SIM 4G LTE (A7680C) để kết nối trực tiếp với mạng di động và sử dụng giao thức MQTT nhằm đảm bảo dữ liệu luôn được truyền tải liên tục mà không phụ thuộc vào hạ tầng Wi-Fi nội bộ.
+\subsection{Cơ chế nhận diện hành vi con người (HAR)}
+Nhận diện hành vi con người (Human Activity Recognition - HAR) thông qua cảm biến quán tính (IMU) hoạt động dựa trên nguyên lý thu thập và phân tích các mẫu động học của cơ thể. Mỗi hành động như đi bộ (Walk), chạy (Run), hay đứng yên (Idle) đều tạo ra một mẫu tín hiệu (pattern) gia tốc và vận tốc góc đặc trưng, mang tính tuần hoàn và lặp lại trên không gian 3 chiều.
+\begin{itemize}
+    \item \textbf{Đứng yên (Idle):} Trục gia tốc dọc theo chiều trọng lực của Trái Đất (thường là trục Z hoặc Y tùy vị trí đeo) sẽ đo được giá trị xấp xỉ $1g$ ($9.8 m/s^2$), trong khi các trục còn lại xấp xỉ $0g$. Vận tốc góc từ con quay hồi chuyển gần như bằng 0.
+    \item \textbf{Đi bộ (Walk) và Chạy (Run):} Bước chân tạo ra các xung gia tốc có tính chu kỳ hình sin. Đi bộ có biên độ dao động và tần số thấp, trong khi chạy tạo ra các đỉnh gia tốc (peaks) sắc nhọn với biên độ lớn và tần số cao hơn. Con quay hồi chuyển cũng ghi nhận sự vung tay hoặc chuyển động xoay của cơ thể tương ứng với từng bước đi.
+\end{itemize}
 
-\subsection{Kiến trúc hệ thống IoT trong giám sát tập trung}
-Hệ thống IoT được xây dựng dựa trên mô hình phân tán bao gồm Client, Broker và Worker, đảm bảo khả năng xử lý bất đồng bộ và mở rộng dễ dàng. Tại lớp thiết bị biên, các vi điều khiển ESP32-S3 đóng vai trò là các MQTT Client, liên tục thu thập dữ liệu từ cảm biến và thực thi suy luận học máy. Các gói tin (payload) chứa trạng thái hành vi được xuất bản (publish) lên một MQTT Broker trung tâm. 
+Bằng cách cắt tín hiệu liên tục thành các \textit{cửa sổ trượt (sliding windows)} với kích thước cố định (ví dụ: 2 giây tương đương 200 mẫu ở tần số 100Hz), chúng ta thu được các ma trận dữ liệu hai chiều chứa toàn bộ thông tin không gian và thời gian của hành động. Các mô hình học sâu sẽ tự động trích xuất các đặc trưng tiềm ẩn từ ma trận này để phân loại chính xác hành vi.
 
-Tại lớp xử lý phía sau (backend), các Worker sẽ đăng ký (subscribe) các chủ đề (topic) tương ứng để trích xuất dữ liệu, sau đó lưu trữ nhật ký (log) vào cơ sở dữ liệu chuỗi thời gian (InfluxDB) cho các truy vấn tần số cao, và cơ sở dữ liệu quan hệ (PostgreSQL trên Supabase) cho dữ liệu định danh. Cuối cùng, dữ liệu được truyền tới giao diện Web Admin (Frontend) thông qua giao thức WebSocket nhằm hiển thị cảnh báo theo thời gian thực cho nhân viên chăm sóc. Kiến trúc này giúp tách biệt rõ ràng luồng thu thập dữ liệu và xử lý logic nghiệp vụ, giảm thiểu tải trọng xử lý tại các nút mạng biên.
+\subsection{Cơ chế phát hiện té ngã (Fall Detection)}
+Khác với các hành vi mang tính chu kỳ, té ngã là một chuỗi sự kiện bất thường, diễn ra cực kỳ nhanh và có đặc điểm động lực học chia làm 4 giai đoạn rõ rệt:
+\begin{enumerate}
+    \item \textbf{Giai đoạn trước khi ngã (Pre-fall):} Người bệnh đang thực hiện các hoạt động bình thường.
+    \item \textbf{Giai đoạn rơi tự do (Free-fall):} Cơ thể bắt đầu mất thăng bằng và rơi xuống. Trong khoảnh khắc này, gia tốc tổng hợp (Sum Vector Magnitude - SVM) của cả 3 trục tiến dần về mức $0g$ do trạng thái không trọng lượng tạm thời.
+    \item \textbf{Giai đoạn va chạm (Impact):} Đây là đặc trưng quan trọng nhất. Cơ thể đập vào mặt đất sinh ra một lực phản hồi cực lớn. Gia tốc kế sẽ ghi nhận một đỉnh (peak) đột biến vọt lên rất cao, thường vượt qua mức $2.5g$ đến $3g$. Cùng lúc đó, con quay hồi chuyển ghi nhận một sự thay đổi góc nghiêng cực gắt.
+    \item \textbf{Giai đoạn sau khi ngã (Post-fall):} Sau cú va chạm, cơ thể nằm bất động trên mặt sàn. Dữ liệu gia tốc kế sẽ trở lại trạng thái tĩnh, nhưng lúc này sự phân bố trọng trường trên các trục không gian đã thay đổi hoàn toàn so với tư thế đứng (do cơ thể nằm ngang).
+\end{enumerate}
 
-\subsection{Lựa chọn giao thức MQTT qua mạng di động 4G LTE}
-Đối với các thiết bị giám sát sức khỏe và phát hiện té ngã, tính liên tục của dữ liệu là yếu tố sống còn. Mặc dù mạng Wi-Fi thường có sẵn trong các viện dưỡng lão, nhưng nó đi kèm với rủi ro mất kết nối khi bệnh nhân di chuyển qua các điểm mù sóng (dead zones) hoặc khi hạ tầng mạng nội bộ gặp sự cố. Do đó, việc tích hợp module SIM 4G LTE (A7680C) được lựa chọn để thay thế Wi-Fi, đảm bảo thiết bị luôn trong trạng thái "sẵn sàng kết nối" (always-on) ở bất kỳ đâu. Để tối ưu hóa việc truyền tải dữ liệu qua mạng di động, giao thức MQTT (Message Queuing Telemetry Transport) được sử dụng thay cho HTTP truyền thống. MQTT hoạt động trên nền tảng TCP/IP với thiết kế phần đầu (header) cực kỳ nhỏ gọn (chỉ từ 2 byte), giúp tối ưu hóa băng thông và tiết kiệm lưu lượng dữ liệu 4G. Đặc biệt, cơ chế Publish/Subscribe của MQTT khi kết hợp với các mức chất lượng dịch vụ (QoS) đảm bảo rằng các cảnh báo khẩn cấp như "té ngã" sẽ được định tuyến đến máy chủ một cách đáng tin cậy với độ trễ tối thiểu. Việc sử dụng mạng 4G kết hợp MQTT giải quyết triệt để rào cản về khoảng cách vật lý của BLE và sự thiếu ổn định của Wi-Fi.
+Nhờ sự kết hợp của cả \textbf{đỉnh gia tốc đột biến} và \textbf{sự thay đổi tư thế tĩnh (orientation change)}, hệ thống có thể dễ dàng phân biệt được một cú té ngã nguy hiểm so với các hành động mạnh khác như nhảy lên, hoặc việc bệnh nhân chủ động nằm xuống giường.
 
-\section{Nền tảng Học máy trên thiết bị biên (TinyML)}
+\section{Nhóm Công nghệ Phần cứng và Giao thức mạng}
+\label{section:3.2}
 
-Khái niệm Học máy trên thiết bị biên (Edge Machine Learning), hay còn được gọi tắt là TinyML, là sự kết hợp giữa các hệ thống vi điều khiển nhúng có tài nguyên cực kỳ hạn chế và các mô hình học máy. Thay vì phải gửi toàn bộ dữ liệu cảm biến thô lên máy chủ đám mây (Cloud) để xử lý, TinyML cho phép quá trình suy luận (inference) được thực thi ngay tại thiết bị thu thập dữ liệu. Đối với hệ thống giám sát người già, cách tiếp cận này mang lại ba ưu điểm cốt lõi: (1) bảo vệ quyền riêng tư do dữ liệu hành vi nhạy cảm không bị truyền tải công khai qua mạng, (2) loại bỏ độ trễ do đường truyền, đảm bảo hệ thống có thể phát hiện té ngã và cảnh báo ngay lập tức, và (3) tối ưu hóa năng lượng tiêu thụ khi truyền tin.
+\subsection{Vi điều khiển ESP32-S3 (Module Seeed Studio XIAO)}
+ESP32-S3 là một hệ thống trên chip (SoC) mạnh mẽ do Espressif Systems phát triển, được tích hợp vi xử lý lõi kép Xtensa 32-bit LX7 hoạt động ở xung nhịp lên đến 240 MHz. Điểm nổi bật nhất của ESP32-S3 so với các phiên bản tiền nhiệm là việc được bổ sung bộ tập lệnh mở rộng SIMD (Single Instruction, Multiple Data). Nhờ đó, chip có khả năng tính toán song song các mảng dữ liệu lớn, giúp gia tăng đáng kể tốc độ xử lý mạng nơ-ron thông qua thư viện ESP-NN. 
 
-\subsection{Thư viện TensorFlow Lite for Microcontrollers}
-Để đưa các mô hình học sâu (Deep Learning) vốn rất cồng kềnh xuống thiết bị vi điều khiển, hệ thống sử dụng thư viện TensorFlow Lite for Microcontrollers (TFLM). Đây là một phiên bản được thiết kế đặc biệt của TensorFlow Lite, nhắm mục tiêu vào các bộ vi xử lý chỉ có vài chục Kilobytes dung lượng RAM. TFLM hoạt động dựa trên cơ chế biên dịch các toán tử (operators) cốt lõi của mạng nơ-ron thành một môi trường thực thi siêu nhẹ. Trong đồ án này, quy trình triển khai khép kín được thực hiện như sau: mô hình mạng được huấn luyện trên hệ thống máy tính bằng framework Keras, sau đó được chuyển đổi sang định dạng \texttt{.tflite}, và cuối cùng chuyển đổi thành mảng số liệu nhị phân lưu trữ dưới dạng mã nguồn C++ (\texttt{.cc} và \texttt{.h}) để nạp thẳng vào bộ nhớ Flash của thiết bị.
+Trong đồ án này, để tối ưu hóa kích thước cho thiết bị đeo (wearable), hệ thống sử dụng module \textbf{Seeed Studio XIAO ESP32S3}. Đây là một bo mạch phát triển có kích thước siêu nhỏ (chỉ cỡ ngón tay cái) nhưng vẫn mang đầy đủ sức mạnh của chip ESP32-S3, với 512 KB SRAM tích hợp và 8MB bộ nhớ PSRAM (phù hợp cho các tác vụ cần bộ nhớ đệm lớn mà cần tốc độ xử lý cao như stream video MJEPG, tensor arena cho tinyML,..). Vi điều khiển này đóng vai trò là "bộ não" trung tâm, không chỉ làm nhiệm vụ thu thập tín hiệu từ các cảm biến ngoại vi qua giao thức I2C, mà còn trực tiếp thực thi mô hình học máy (TinyML) ngay tại thiết bị biên (Edge Computing). 
 
-\subsection{Tối ưu hóa tính toán trên kiến trúc ESP32-S3 với ESP-NN và lệnh SIMD}
-Thiết bị phần cứng lõi được sử dụng tại các nút mạng biên là vi điều khiển XIAO ESP32-S3. Điểm khác biệt lớn nhất giúp ESP32-S3 vượt trội hơn các thế hệ tiền nhiệm trong bài toán trí tuệ nhân tạo là việc kiến trúc vi xử lý này được trang bị tập lệnh mở rộng SIMD (Single Instruction, Multiple Data - Một lệnh đa dữ liệu). Tập lệnh SIMD cho phép vi xử lý thực thi các phép tính toán học vector một cách song song thay vì tuần tự, qua đó gia tăng đáng kể thông lượng tính toán các phép nhân ma trận bên trong mạng nơ-ron. 
+Một ưu điểm vượt trội khác của module XIAO ESP32S3 là thiết kế phần cứng thân thiện với thiết bị đeo di động. Ở mặt sau của bo mạch được tích hợp sẵn 2 pad hàn (chân BAT+ và BAT-) dành riêng cho việc kết nối trực tiếp với pin Lithium 3.7V. Tính năng này kết hợp với mạch quản lý sạc pin đã được tích hợp sẵn trên bo mạch giúp thiết bị có thể hoạt động hoàn toàn độc lập, dễ dàng được cung cấp nguồn điện trực tiếp từ pin mà không cần phải thiết kế thêm mạch nguồn cồng kềnh.
 
-Đồng thời, hệ thống được phát triển trên bộ khung ESP-IDF (phiên bản 5.4.x) nhằm khai thác triệt để thư viện ESP-NN. Đây là tập hợp các hàm toán học hỗ trợ mạng nơ-ron được hãng Espressif tối ưu hóa riêng cho tập lệnh SIMD của chip ESP32-S3. Bằng cách kết hợp bộ định tuyến của thư viện TFLM với phần cứng tăng tốc thông qua ESP-NN, thời gian suy luận (inference time) của mô hình phân loại chuỗi thời gian trên thiết bị được rút ngắn xuống chỉ còn khoảng 70ms, đáp ứng hoàn hảo tiêu chí phản hồi theo thời gian thực của hệ thống.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{Hinhve/esp32s3_front.png}
+    \includegraphics[width=1\textwidth]{Hinhve/esp32s3_back.png}
+    \caption{Mặt trước và mặt sau của module Seeed Studio XIAO ESP32S3 (chú ý 2 chân BAT cấp nguồn pin ở mặt sau)}
+    \label{fig:esp32s3}
+\end{figure}
 
-\subsection{Quy trình lượng tử hóa mô hình (Quantization INT8)}
-Một rào cản lớn khi triển khai các mô hình học sâu trên vi điều khiển là sự hạn chế về tài nguyên bộ nhớ SRAM và Flash. Mặc định, các tham số trọng số (weights) và độ lệch (biases) của mạng nơ-ron được lưu trữ dưới định dạng số thực dấu phẩy động 32-bit (Float32). Để giải quyết bài toán này, kỹ thuật Lượng tử hóa sau huấn luyện (Post-training Quantization) được áp dụng. Kỹ thuật này sử dụng một tập dữ liệu đại diện để ánh xạ toàn bộ các tham số từ định dạng Float32 sang định dạng số nguyên 8-bit (INT8). Việc lượng tử hóa INT8 không chỉ giúp nén kích thước lưu trữ của mô hình xuống 4 lần mà còn khai thác tối đa sức mạnh tính toán số nguyên của các đơn vị ALU trên vi điều khiển. Kết quả thực nghiệm cho thấy, mô hình sau lượng tử hóa có kích thước cực kỳ nhỏ gọn (chiếm khoảng 80 KB Flash và tiêu thụ 28 KB RAM cho vùng nhớ Tensor Arena), trong khi độ chính xác vẫn duy trì ở mức tối ưu.
+\subsection{Cảm biến quán tính MPU6050}
+MPU6050 là một cảm biến vi cơ điện tử (MEMS) 6 bậc tự do (6-DOF) bao gồm một gia tốc kế (Accelerometer) 3 trục và một con quay hồi chuyển (Gyroscope) 3 trục. 
+\begin{itemize}
+    \item \textbf{Gia tốc kế:} Đo lường lực gia tốc tuyến tính (bao gồm cả gia tốc trọng trường), giúp xác định sự thay đổi vận tốc và hướng của thiết bị. Trong bài toán phát hiện té ngã, gia tốc kế chịu trách nhiệm phát hiện các xung lực va chạm cực đại khi người bệnh tiếp đất.
+    \item \textbf{Con quay hồi chuyển:} Đo lường vận tốc góc của thiết bị theo 3 trục không gian. Thông số này cực kỳ hữu ích trong việc tính toán góc nghiêng của cơ thể, hỗ trợ phân biệt các tư thế sinh hoạt bình thường và trạng thái mất thăng bằng.
+\end{itemize}
+Dữ liệu thô từ MPU6050 được lấy mẫu liên tục thông qua giao tiếp I2C với tốc độ cao, tạo thành các chuỗi dữ liệu đầu vào cho mạng nơ-ron.
 
-\section{Các thuật toán học sâu xử lý dữ liệu chuỗi thời gian}
-% \subsection{Xử lý dữ liệu cảm biến quán tính (IMU MPU6050)}
-% \subsection{Mạng nơ-ron tích chập thặng dư 1 chiều (1D ResNet)}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{Hinhve/mpu6050.jpg}
+    \caption{Cảm biến quán tính MPU6050 đo gia tốc và vận tốc góc}
+    \label{fig:mpu6050}
+\end{figure}
 
-\section{Công nghệ Web Admin và Quản trị dữ liệu}
-% \subsection{Khung phát triển Backend (FastAPI) và Frontend (Next.js)}
-% \subsection{Cơ sở dữ liệu PostgreSQL (Supabase) và InfluxDB (Docker/Cloudflare)}
+\subsection{Module truyền thông 4G LTE A7680C}
+Nhằm khắc phục những hạn chế của kết nối Wi-Fi (phụ thuộc vào cơ sở hạ tầng mạng cục bộ) và Bluetooth (yêu cầu phải ghép nối với điện thoại thông minh), đồ án sử dụng module SIM 4G LTE A7680C. Đây là một module viễn thông siêu nhỏ gọn, hỗ trợ băng tần LTE Cat-1, tối ưu hóa cho các ứng dụng IoT (Internet of Things) đòi hỏi độ trễ thấp và băng thông vừa phải. Nhờ tích hợp module A7680C, thiết bị đeo có thể hoạt động hoàn toàn độc lập, liên tục truyền tải dữ liệu cảnh báo và viễn trắc trực tiếp lên máy chủ đám mây từ bất kỳ vị trí nào có phủ sóng di động.
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{Hinhve/a7680c_front.jpeg}
+    \includegraphics[width=0.45\textwidth]{Hinhve/a7680c_back.jpeg}
+    \caption{Module truyền thông mạng di động 4G LTE A7680C (Mặt trước và mặt sau)}
+    \label{fig:a7680c}
+\end{figure}
+
+\subsection{Giao thức truyền thông PPPoS}
+Để kết nối module 4G A7680C với vi điều khiển ESP32-S3 một cách tối ưu, đồ án không sử dụng tập lệnh AT truyền thống để gửi dữ liệu từng bước, mà ứng dụng giao thức PPPoS (Point-to-Point Protocol over Serial). PPPoS cho phép thiết lập một kết nối mạng trực tiếp qua cổng nối tiếp (UART). Sau khi kết nối thành công, hệ điều hành FreeRTOS trên ESP32 sẽ nhận diện kết nối 4G như một giao diện mạng (Network Interface) thực thụ, có địa chỉ IP riêng. Việc này giúp các ứng dụng tầng trên (như MQTT client hay HTTP client) có thể tương tác với mạng di động bằng các socket tiêu chuẩn một cách mượt mà và ổn định.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Hinhve/pppos_stack.png}
+    \caption{Kiến trúc giao thức PPPoS ánh xạ mạng 4G thành giao diện mạng trên ESP32S3}
+    \label{fig:pppos_stack}
+\end{figure}
+
+\subsection{Giao thức truyền tải MQTT}
+MQTT (Message Queuing Telemetry Transport) là một giao thức nhắn tin theo mô hình Xuất bản/Đăng ký (Publish/Subscribe), được thiết kế đặc biệt cho các thiết bị IoT hoạt động trong điều kiện băng thông thấp và mạng không ổn định. Khác với kiến trúc Request/Response nặng nề của HTTP, MQTT sử dụng một máy chủ trung gian (Broker) để điều phối thông điệp. 
+\begin{itemize}
+    \item \textbf{Cơ chế QoS (Quality of Service):} MQTT hỗ trợ 3 mức QoS (0, 1, 2). Trong đồ án, các thông điệp cảnh báo té ngã khẩn cấp được đặt mức QoS 1 (At least once) để đảm bảo gói tin chắc chắn được máy chủ tiếp nhận, trong khi dữ liệu viễn trắc thông thường dùng QoS 0 để tối ưu băng thông.
+    \item \textbf{Keep-Alive:} MQTT duy trì một kết nối TCP liên tục nhưng tiêu tốn cực ít năng lượng thông qua cơ chế gửi gói tin Ping định kỳ, giúp máy chủ lập tức nhận biết khi thiết bị mất tín hiệu hoặc cạn pin.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{Hinhve/mqtt_architechture.png}
+    \caption{Mô hình giao tiếp Publish/Subscribe của MQTT trong hệ thống giám sát}
+    \label{fig:mqtt_architecture}
+\end{figure}
+
+\section{Công nghệ Nhận diện hành vi (TinyML)}
+\label{section:3.3}
+
+\subsection{Mạng nơ-ron tích chập thặng dư 1 chiều (1D ResNet)}
+Trong lĩnh vực xử lý chuỗi thời gian (time-series) như tín hiệu IMU, mạng nơ-ron tích chập 1 chiều (1D CNN) tỏ ra vượt trội so với các mạng nơ-ron hồi quy (RNN/LSTM) về tốc độ suy luận (inference speed) và khả năng trích xuất đặc trưng cục bộ. Tuy nhiên, khi mạng CNN được thiết kế quá sâu nhằm tăng độ chính xác, hiện tượng suy biến đạo hàm (vanishing gradient) sẽ xuất hiện. 
+
+Để giải quyết vấn đề này, kiến trúc 1D ResNet (Residual Network) được ứng dụng. Điểm cốt lõi của ResNet là cơ chế \textit{Skip Connection} (kết nối tắt), cho phép dữ liệu từ các tầng trước "bỏ qua" một số tầng trung gian để cộng trực tiếp vào đầu ra của các tầng sau. Cơ chế này không chỉ giúp huấn luyện các mạng cực sâu một cách hiệu quả mà còn giữ lại được các thông tin dao động tĩnh quan trọng của cảm biến, vốn rất dễ bị mất mát sau nhiều phép tích chập.
+
+% \begin{figure}[H]
+%     \centering
+%     % \includegraphics[width=0.8\textwidth]{Hinhve/1d_resnet.png}
+%     \caption{Sơ đồ khối kiến trúc mạng 1D ResNet với cơ chế Skip Connection}
+%     \label{fig:1d_resnet}
+% \end{figure}
+
+\subsection{Kỹ thuật lượng tử hóa (Quantization) cho TinyML}
+TinyML (Trí tuệ nhân tạo vạn vật) là khái niệm chỉ việc triển khai các mô hình học máy lên các vi điều khiển có tài nguyên phần cứng cực kỳ eo hẹp (vài chục KB RAM). Một mô hình 1D ResNet được huấn luyện bằng TensorFlow/Keras thường biểu diễn trọng số dưới dạng số thực dấu phẩy động 32-bit (Float32). Dạng dữ liệu này có kích thước rất lớn và yêu cầu vi xử lý tính toán số thực mạnh mẽ, gây tốn pin và vượt quá giới hạn SRAM của ESP32.
+
+Để giải quyết rào cản này, kỹ thuật lượng tử hóa sau huấn luyện (Post-Training Quantization - PTQ) được áp dụng. Toàn bộ trọng số và tham số kích hoạt của mạng nơ-ron được ánh xạ từ không gian Float32 xuống số nguyên 8-bit (INT8). Nhờ đó, kích thước mô hình (ROM) giảm đi 4 lần (từ vài MB xuống chỉ còn dưới 100 KB), đồng thời vi điều khiển ESP32-S3 có thể tận dụng tập lệnh SIMD để thực hiện phép nhân ma trận số nguyên siêu tốc. Lượng tử hóa tuy có làm giảm một phần nhỏ độ chính xác của mô hình, nhưng hoàn toàn nằm trong mức độ chấp nhận được để đổi lấy khả năng chạy trực tiếp trên thiết bị biên.
+\section{Nền tảng Phần mềm và Hệ thống}
+\label{section:3.4}
+
+\subsection{Nền tảng phát triển Nhúng ESP-IDF và FreeRTOS}
+ESP-IDF (Espressif IoT Development Framework) là bộ công cụ phát triển phần mềm chính thức cho dòng chip ESP32. Khác với môi trường Arduino IDE vốn chỉ phù hợp cho các dự án nhỏ với cấu trúc lập trình tuần tự (Super Loop), ESP-IDF cung cấp khả năng can thiệp sâu vào phần cứng và hỗ trợ đa luồng thông qua hệ điều hành thời gian thực FreeRTOS.
+
+FreeRTOS đóng vai trò là "nhạc trưởng" điều phối toàn bộ hoạt động của thiết bị biên. Thay vì bắt bộ vi xử lý thực hiện các công việc nối tiếp nhau và phải chờ đợi (blocking), FreeRTOS cho phép chia nhỏ chương trình thành các tác vụ (Tasks) độc lập. Trong đồ án này, các tác vụ như lấy mẫu cảm biến IMU, nội suy AI, và truyền thông MQTT được cấp phát các mức độ ưu tiên (priority) khác nhau. Hệ thống sử dụng cơ chế hàng đợi (Queue) và cờ hiệu (Semaphore) để đồng bộ hóa dữ liệu giữa các tác vụ, đảm bảo rằng cảm biến không bao giờ bị bỏ lỡ mẫu dữ liệu nào ngay cả khi mô hình AI đang chiếm dụng CPU để tính toán.
+
+\subsection{Nền tảng triển khai mô hình học máy (TinyML Pipeline)}
+Đồ án xây dựng một quy trình (pipeline) khép kín để phát triển và triển khai mô hình học máy lên thiết bị nhúng với các công cụ chuyên dụng:
+\begin{itemize}
+    \item \textbf{Huấn luyện mô hình (Training):} Quá trình xây dựng và huấn luyện mạng 1D ResNet được thực hiện trên máy tính bằng thư viện mã nguồn mở \textbf{TensorFlow và Keras (phiên bản 2.21)}. Đây là framework mạnh mẽ giúp định nghĩa các lớp tích chập, hàm mất mát và tối ưu hóa trọng số mô hình với độ chính xác cao.
+    \item \textbf{Nén và Lượng tử hóa (Quantization):} Sau khi huấn luyện, mô hình được chuyển đổi thông qua \textbf{TensorFlow Lite (TFLite)}. Công cụ này thực hiện lượng tử hóa sau huấn luyện (Post-Training Quantization), ép kiểu trọng số từ Float32 xuống INT8, giúp giảm dung lượng mô hình tới 4 lần mà gần như không làm suy giảm độ chính xác.
+    \item \textbf{Suy luận tại biên (Inference):} Mô hình đã lượng tử hóa được nạp vào ESP32-S3 và thực thi bằng thư viện \textbf{TensorFlow Lite for Microcontrollers}. Đây là một phiên bản rút gọn của TFLite, được thiết kế đặc biệt để chạy trên vi điều khiển mà không cần hệ điều hành nền tảng máy chủ, tiêu tốn chỉ vài chục kilobyte bộ nhớ.
+    \item \textbf{Tối ưu hóa phần cứng (Hardware Acceleration):} Để tối đa hóa tốc độ suy luận, đồ án tích hợp thư viện \textbf{ESP-NN} do Espressif cung cấp. Thư viện này chứa các hàm toán học (như Convolution, Fully Connected) được viết bằng hợp ngữ (Assembly) và tối ưu hóa chuyên biệt cho tập lệnh SIMD của lõi Xtensa trên ESP32-S3, giúp quá trình nhận diện diễn ra gần như tức thời.
+\end{itemize}
+
+% \begin{figure}[H]
+%     \centering
+%     % \includegraphics[width=0.8\textwidth]{Hinhve/tinyml_pipeline.png}
+%     \caption{Quy trình lượng tử hóa và triển khai mô hình học máy lên thiết bị nhúng (TinyML Pipeline)}
+%     \label{fig:tinyml_pipeline}
+% \end{figure}
+
+\section{Hệ quản trị Cơ sở dữ liệu}
+\label{section:3.5}
+
+Hệ thống ứng dụng kiến trúc cơ sở dữ liệu kép (Dual-Database) để xử lý hiệu quả hai loại dữ liệu có tính chất hoàn toàn khác biệt.
+
+\subsection{Cơ sở dữ liệu chuỗi thời gian InfluxDB}
+Dữ liệu thu thập từ các cảm biến IoT (gia tốc, số bước chân, mức pin) mang tính chất chuỗi thời gian (time-series), tức là được sinh ra liên tục, số lượng cực lớn và chỉ được ghi nối tiếp chứ hiếm khi bị sửa đổi. Đối với loại dữ liệu này, các cơ sở dữ liệu quan hệ truyền thống sẽ nhanh chóng bị quá tải. 
+
+Do đó, đồ án sử dụng \textbf{InfluxDB}, một hệ quản trị cơ sở dữ liệu chuỗi thời gian chuyên biệt. InfluxDB lưu trữ dữ liệu theo cấu trúc Measurement (bảng), Tags (thẻ phân loại có đánh chỉ mục, ví dụ: \texttt{device\_id}), và Fields (giá trị thực tế, ví dụ: \texttt{accX, accY}). Với cơ chế nén dữ liệu cực tốt và ngôn ngữ truy vấn Flux mạnh mẽ, InfluxDB có thể đáp ứng hàng chục nghìn luồng ghi (write) mỗi giây và truy xuất dữ liệu lịch sử cực nhanh để vẽ biểu đồ giám sát.
+
+\subsection{Cơ sở dữ liệu quan hệ PostgreSQL}
+Ngược lại với dữ liệu cảm biến, các thông tin về hồ sơ bệnh nhân, danh sách thiết bị, phân quyền y tá và lịch sử cảnh báo lại có tính quan hệ chặt chẽ và yêu cầu tính toàn vẹn dữ liệu (ACID) tuyệt đối. Để giải quyết bài toán này, đồ án sử dụng \textbf{PostgreSQL} - hệ quản trị cơ sở dữ liệu quan hệ mã nguồn mở mạnh mẽ nhất hiện nay. PostgreSQL xử lý việc liên kết (JOIN) các bảng dữ liệu phức tạp, đảm bảo rằng một thiết bị tại một thời điểm chỉ được gán cho một bệnh nhân duy nhất (Unique Constraint), và duy trì tính nhất quán cho toàn bộ hệ thống quản trị.
+
+% \begin{figure}[H]
+%     \centering
+%     % \includegraphics[width=0.8\textwidth]{Hinhve/dual_database.png}
+%     \caption{Mô hình Cơ sở dữ liệu kép kết hợp InfluxDB và PostgreSQL}
+%     \label{fig:dual_database}
+% \end{figure}
+
+\section{Nền tảng Web và Dịch vụ Backend}
+\label{section:3.6}
+
+\subsection{Framework phát triển Backend FastAPI}
+Trái tim của máy chủ hệ thống được xây dựng bằng \textbf{FastAPI}, một web framework hiện đại và hiệu năng cao dành cho Python.
+\begin{itemize}
+    \item \textbf{Hiệu năng cao và Bất đồng bộ (Async):} FastAPI hỗ trợ xử lý bất đồng bộ (Asynchronous) gốc thông qua ASGI. Điều này cực kỳ quan trọng khi Backend phải đồng thời lắng nghe hàng trăm thông điệp từ MQTT Broker, ghi vào InfluxDB và phục vụ các HTTP Request từ Frontend mà không bị chặn luồng (blocking).
+    \item \textbf{Xác thực dữ liệu tự động:} Nhờ tích hợp chặt chẽ với thư viện Pydantic, FastAPI tự động kiểm tra tính hợp lệ của các gói tin JSON gửi lên, giảm thiểu đáng kể lỗi do dữ liệu không đúng định dạng.
+    \item \textbf{Tài liệu API tự sinh:} FastAPI tự động tạo ra tài liệu API tương tác trực quan (Swagger UI), giúp quá trình kiểm thử và tích hợp với Frontend diễn ra trơn tru, nhanh chóng.
+\end{itemize}
+
+% \begin{figure}[H]
+%     \centering
+%     % \includegraphics[width=0.8\textwidth]{Hinhve/fastapi_swagger.png}
+%     \caption{Giao diện tài liệu API Swagger tự sinh từ FastAPI}
+%     \label{fig:fastapi_swagger}
+% \end{figure}
+
+\subsection{Framework Frontend Next.js và Tailwind CSS}
+Giao diện quản lý dành cho nhân viên y tế (Dashboard) được xây dựng bằng \textbf{Next.js} (phiên bản App Router), một framework phát triển dựa trên thư viện ReactJS.
+\begin{itemize}
+    \item \textbf{Next.js:} Khác với ReactJS thuần túy (chỉ render ở phía client), Next.js cung cấp khả năng kết hợp giữa Server-Side Rendering (SSR) và Client-Side Rendering (CSR). Nhờ đó, ứng dụng tải trang cực nhanh, tối ưu trải nghiệm người dùng và giúp bảo mật các khóa truy cập API quan trọng ở phía máy chủ.
+    \item \textbf{Tailwind CSS:} Đây là một framework CSS theo phong cách \textit{Utility-first}. Thay vì phải viết các file CSS độc lập và đặt tên class thủ công, Tailwind cho phép lập trình viên áp dụng trực tiếp các class định dạng ngay trong mã HTML/JSX. Công cụ này giúp tạo ra một giao diện Web hiện đại, độ tùy biến cao, hỗ trợ thiết kế đáp ứng (Responsive Design) mượt mà trên cả màn hình máy tính và thiết bị di động của bác sĩ.
+\end{itemize}
+
+% \begin{figure}[H]
+%     \centering
+%     % \includegraphics[width=0.8\textwidth]{Hinhve/nextjs_architecture.png}
+%     \caption{Cơ chế Server-Side Rendering (SSR) trong framework Next.js}
+%     \label{fig:nextjs_architecture}
+% \end{figure}
 
 \end{document}

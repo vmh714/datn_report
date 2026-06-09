@@ -165,7 +165,7 @@ Sinh viên cần tiến hành phân tích, so sánh, đánh giá chi tiết ưu 
         \end{itemize}
         \item Insight kỹ thuật:
         \begin{itemize}
-            \item Chiến lược lọc nhiễu EWMA thay vì Low-pass Filter: Bộ lọc EWMA với FSV $M_i=0.3×SVM_i+0.7×FSV M_{i-1}$. cực kỳ phù hợp cho hệ nhúng. Nó không cần mảng bộ đệm lằng nhằng như FIR filter, chỉ tốn 1 biến nhớ cho trạng thái cũ, thi hành chỉ trong 2 phép nhân và 1 phép cộng.
+            \item Chiến lược lọc nhiễu EWMA thay vì Low-pass Filter: Bộ lọc EWMA với FSV $M_i=0.3\times SVM_i+0.7\times FSV M_{i-1}$. cực kỳ phù hợp cho hệ nhúng. Nó không cần mảng bộ đệm lằng nhằng như FIR filter, chỉ tốn 1 biến nhớ cho trạng thái cũ, thi hành chỉ trong 2 phép nhân và 1 phép cộng.
             \item Đơn giản hóa mô hình nhận diện (KNN rút gọn): Phân loại bằng cách chỉ dùng đặc trưng Phương Sai (Variance) tính trên cửa sổ trượt 1.5s (15 mẫu ở 10Hz). Bạn hoàn toàn có thể làm một bảng tham chiếu (lookup table) chỉ gồm 4 giá trị ngưỡng trung tâm (centroids), và kiểm tra xem Variance mới nhất gần với trung tâm nào nhất. Thuật toán chạy trong độ phức tạp O(1) theo thời gian.
             \item Tần số lấy mẫu 10Hz là đủ: Trái với quan điểm dùng IMU phải đọc dữ liệu 50Hz-100Hz, bài báo này chứng minh hoạt động ngã trên cầu thang hoàn toàn có thể bao quát tốt với tần số siêu thấp 10Hz (100ms). Nó giúp hệ thống edge sleep nhiều hơn.
         \end{itemize}
@@ -250,36 +250,166 @@ Sinh viên cần tiến hành phân tích, so sánh, đánh giá chi tiết ưu 
 
 \section{Tổng quan chức năng}
 \label{section:2.2}
-Phần \ref{section:2.2} này có nhiệm vụ tóm tắt các chức năng của phần mềm. Trong phần này, sinh viên lưu ý chỉ mô tả chức năng mức cao (tổng quan) mà không đặc tả chi tiết cho từng chức năng. Đặc tả chi tiết được trình bày trong phần \ref{section:2.3}.
+Phần này mô tả tổng quan các chức năng cốt lõi của hệ thống, dựa trên định hướng phân chia hai vai trò người dùng chính: Quản trị viên (Admin) và Nhân viên y tế (Medical Staff), cùng với tác nhân hệ thống là Thiết bị giám sát (Edge Node).
 
 \subsection{Biểu đồ use case tổng quát}
 \label{subsection:2.2.1}
-Sinh viên vẽ biểu đồ use case tổng quan và giải thích các tác nhân tham gia là gì, nêu vai trò của từng tác nhân, và mô tả ngắn gọn các use case chính.
+Biểu đồ use case tổng quát mô tả các tương tác chính giữa người dùng và hệ thống. Các tác nhân (Actors) tham gia bao gồm:
+\begin{itemize}
+    \item \textbf{Quản trị viên (Admin):} Đảm nhiệm vai trò thiết lập hệ thống, quản lý cơ sở dữ liệu thiết bị và cấp quyền cho nhân viên y tế.
+    \item \textbf{Nhân viên y tế (Medical Staff):} Người trực tiếp sử dụng hệ thống để giám sát, theo dõi hồ sơ bệnh nhân, quản lý việc cấp phát thiết bị và xử lý các sự cố té ngã.
+    \item \textbf{Thiết bị giám sát (ESP32 Node):} Tác nhân hệ thống (System Actor), liên tục gửi dữ liệu viễn trắc (telemetry) thông qua giao thức PPPoS trên mạng 4G LTE và kích hoạt các cảnh báo (alerts) khẩn cấp.
+\end{itemize}
 
-\subsection{Biểu đồ use case phân rã XYZ}
+Các ca sử dụng (Use case) cốt lõi bao gồm: Đăng nhập \& Xác thực, Quản lý thiết bị, Quản lý nhân sự, Quản lý bệnh nhân (Wearer), Gán/Thu hồi thiết bị, Giám sát thời gian thực, Xử lý cảnh báo té ngã, và Xem thống kê vận động.
+
+\subsection{Biểu đồ use case phân rã "Giám sát thời gian thực"}
 \label{subsection:2.2.2}
-Với mỗi use case mức cao trong biểu đồ use case tổng quan, sinh viên tạo một mục riêng như mục \ref{subsection:2.2.2} và tiến hành phân rã use case đó. Lưu ý tên use case cần phân rã trong biểu đồ use case tổng quan phải khớp với tên đề mục.
+Use case "Giám sát thời gian thực" yêu cầu hệ thống cung cấp cho nhân viên y tế một giao diện Dashboard tổng quan. Thông qua giao diện này, nhân viên y tế có thể theo dõi danh sách toàn bộ các thiết bị đang hoạt động, xem trạng thái kết nối mạng, mức pin hiện tại của từng thiết bị. Đặc biệt, chức năng này sẽ liên tục lắng nghe các gói tin từ MQTT Broker để ngay lập tức hiển thị cảnh báo (kèm âm thanh và viền đỏ nhấp nháy) khi có sự cố té ngã xảy ra. Biểu đồ phân rã cho nhóm chức năng này tập trung vào luồng hiển thị dữ liệu và cơ chế cảnh báo.
 
-Trong mỗi mục như vậy, sinh viên vẽ và giải thích ngắn gọn các use case phân rã.
+% \begin{figure}[H]
+%     \centering
+%     % \includegraphics[width=0.8\textwidth]{Hinhve/use_case_giam_sat.png}
+%     \caption{Biểu đồ use case phân rã "Giám sát thời gian thực"}
+%     \label{fig:use_case_giam_sat}
+% \end{figure}
 
-\subsection{Quy trình nghiệp vụ}
+\subsection{Biểu đồ use case phân rã "Xử lý cảnh báo té ngã"}
 \label{subsection:2.2.3}
-Nếu sản phẩm/hệ thống cần xây dựng có quy trình nghiệp vụ quan trọng/đáng chú ý, sinh viên cần mô tả và vẽ biểu đồ hoạt động minh họa quy trình nghiệp vụ đó. Sinh viên lưu ý đây không phải là luồng sự kiện của từng use case, mà là luồng hoạt động kết hợp nhiều use case để thực hiện một nghiệp vụ nào đó.
+Use case "Xử lý cảnh báo té ngã" mô tả quy trình tiếp nhận và xử lý sự cố. Khi màn hình Dashboard hiển thị cảnh báo té ngã, nhân viên y tế sẽ kiểm tra và đến hiện trường để hỗ trợ người bệnh. Sau khi hoàn thành sơ cứu hoặc xác minh tình trạng an toàn, nhân viên y tế sẽ tương tác với hệ thống bằng cách nhấn nút "Đã xử lý" (Resolve). Chức năng này cập nhật trạng thái của cảnh báo trong cơ sở dữ liệu để đảm bảo không có sự cố nào bị bỏ sót, đồng thời lưu trữ lịch sử để phục vụ báo cáo sau này.
 
-Ví dụ, một hệ thống quản lý thư viện có quy trình nghiệp vụ mượn trả với mô tả sơ bộ như sau: Sinh viên làm thẻ mượn, sau đó sinh viên đăng ký mượn sách, thủ thư cho mượn, và cuối cùng sinh viên trả lại sách cho thư viện. Một hệ thống có thể có một vài quy trình nghiệp vụ quan trọng như vậy.
+% \begin{figure}[H]
+%     \centering
+%     % \includegraphics[width=0.8\textwidth]{Hinhve/use_case_xu_ly.png}
+%     \caption{Biểu đồ use case phân rã "Xử lý cảnh báo té ngã"}
+%     \label{fig:use_case_xu_ly}
+% \end{figure}
+
+\subsection{Biểu đồ use case phân rã "Gán thiết bị cho bệnh nhân"}
+\label{subsection:2.2.4}
+Use case "Gán thiết bị cho bệnh nhân" phục vụ mục đích thiết lập liên kết vật lý giữa một thiết bị ESP32 và một hồ sơ bệnh nhân. Nhân viên y tế sẽ chọn một thiết bị chưa được sử dụng và chọn một bệnh nhân từ danh sách. Một yêu cầu cực kỳ quan trọng ở bước này là việc nhập chiều cao của bệnh nhân, vì hệ thống cần thông số này để ước tính sải bước chân và tính toán quãng đường di chuyển dựa trên dữ liệu gia tốc. Việc gán thiết bị cũng tự động kích hoạt quá trình thu thập và lưu trữ viễn trắc cho bệnh nhân đó.
+
+% \begin{figure}[H]
+%     \centering
+%     % \includegraphics[width=0.8\textwidth]{Hinhve/use_case_gan_thiet_bi.png}
+%     \caption{Biểu đồ use case phân rã "Gán thiết bị cho bệnh nhân"}
+%     \label{fig:use_case_gan_thiet_bi}
+% \end{figure}
+
+\subsection{Biểu đồ use case phân rã "Xem thống kê vận động"}
+\label{subsection:2.2.5}
+Use case "Xem thống kê vận động" giúp nhân viên y tế và quản trị viên tra cứu các số liệu lịch sử. Người dùng có thể chọn một hồ sơ bệnh nhân cụ thể và thiết lập mốc thời gian cần tra cứu (ví dụ: trong tuần qua). Hệ thống sẽ truy xuất dữ liệu chuỗi thời gian (time-series) từ InfluxDB và vẽ các biểu đồ trực quan như: biểu đồ số bước chân đi bộ, biểu đồ số bước chạy, và biểu đồ khoảng cách di chuyển. Các biểu đồ này cung cấp thông tin y khoa quan trọng để đánh giá mức độ phục hồi hoặc suy giảm chức năng vận động của người bệnh.
+
+% \begin{figure}[H]
+%     \centering
+%     % \includegraphics[width=0.8\textwidth]{Hinhve/use_case_thong_ke.png}
+%     \caption{Biểu đồ use case phân rã "Xem thống kê vận động"}
+%     \label{fig:use_case_thong_ke}
+% \end{figure}
+
+\subsection{Quy trình nghiệp vụ (Activity Diagram)}
+\label{subsection:2.2.6}
+Quy trình nghiệp vụ quan trọng nhất của hệ thống là \textbf{Luồng xử lý sự cố té ngã khẩn cấp}. Quy trình diễn ra như sau:
+\begin{enumerate}
+    \item Thiết bị đeo (ESP32-S3) phát hiện té ngã thông qua mô hình học sâu 1D ResNet.
+    \item Thiết bị ngay lập tức gửi gói tin cảnh báo qua giao thức MQTT (kết nối 4G LTE bằng PPPoS) đến MQTT Broker.
+    \item Giao diện Web (Dashboard) đang đăng ký (subscribe) luồng MQTT sẽ lập tức hiển thị cảnh báo đỏ toàn màn hình kèm theo âm thanh báo động.
+    \item Nhân viên y tế xác nhận cảnh báo trên màn hình và di chuyển đến vị trí bệnh nhân để sơ cứu.
+    \item Sau khi xử lý xong sự cố, nhân viên y tế thao tác chọn "Đã xử lý" (Resolve) trên hệ thống. 
+    \item Hệ thống gọi API cập nhật trạng thái cảnh báo vào cơ sở dữ liệu PostgreSQL, kết thúc quy trình.
+\end{enumerate}
+
 \section{Đặc tả chức năng}
 \label{section:2.3}
-Sinh viên lựa chọn từ 4 đến 7 use case quan trọng nhất của đồ án để đặc tả chi tiết. Mỗi đặc tả bao gồm ít nhất các thông tin sau: (i) Tên use case, (ii) Luồng sự kiện (chính và phát sinh), (iii) Tiền điều kiện, và (iv) Hậu điều kiện. Sinh viên chỉ vẽ bổ sung biểu đồ hoạt động khi đặc tả use case phức tạp.
-\subsection{Đặc tả use case A}
-\hfill
-\subsection{Đặc tả use case B}
-\hfill
+Dưới đây là đặc tả chi tiết của 4 Use Case quan trọng nhất, phản ánh nghiệp vụ cốt lõi của hệ thống giám sát.
+
+\subsection{Đặc tả Use case: Giám sát thời gian thực}
+\begin{table}[H]
+    \centering
+    \caption{Đặc tả Use case: Giám sát thời gian thực}
+    \label{tab:uc_giam_sat}
+    \begin{tabular}{|p{4cm}|p{10.5cm}|}
+        \hline
+        \textbf{Tên Use case} & \textbf{Giám sát thời gian thực} \\ \hline
+        \textbf{Tác nhân} & Nhân viên y tế \\ \hline
+        \textbf{Mô tả} & Cung cấp giao diện lưới (grid) hiển thị trạng thái của toàn bộ thiết bị đang hoạt động (Pin, kết nối mạng) và tiếp nhận cảnh báo khẩn cấp. \\ \hline
+        \textbf{Tiền điều kiện} & Nhân viên đã đăng nhập và có thiết bị đang online. \\ \hline
+        \textbf{Luồng sự kiện chính} & 
+        1. Nhân viên y tế truy cập vào trang chủ (Dashboard). \newline
+        2. Hệ thống (Frontend) thiết lập kết nối WebSocket tới MQTT Broker. \newline
+        3. Hệ thống hiển thị danh sách thiết bị kèm trạng thái kết nối. \newline
+        4. Khi có gói tin cảnh báo té ngã từ Broker, Frontend lập tức bung màn hình cảnh báo (Overlay) và phát âm thanh. \\ \hline
+        \textbf{Hậu điều kiện} & Cảnh báo được hiển thị thành công cho đến khi nhân viên xác nhận. \\ \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Đặc tả Use case: Xử lý cảnh báo té ngã}
+\begin{table}[H]
+    \centering
+    \caption{Đặc tả Use case: Xử lý cảnh báo té ngã (Resolve Alert)}
+    \label{tab:uc_xu_ly_canh_bao}
+    \begin{tabular}{|p{4cm}|p{10.5cm}|}
+        \hline
+        \textbf{Tên Use case} & \textbf{Xử lý cảnh báo té ngã} \\ \hline
+        \textbf{Tác nhân} & Nhân viên y tế \\ \hline
+        \textbf{Mô tả} & Nhân viên đánh dấu một cảnh báo té ngã là "Đã xử lý" sau khi đã hỗ trợ bệnh nhân. \\ \hline
+        \textbf{Tiền điều kiện} & Tồn tại ít nhất một cảnh báo té ngã chưa được xử lý. \\ \hline
+        \textbf{Luồng sự kiện chính} & 
+        1. Nhân viên y tế bấm vào nút "Xác nhận đã xử lý" trên cảnh báo tương ứng. \newline
+        2. Frontend gửi yêu cầu PATCH kèm Access Token tới Backend FastAPI. \newline
+        3. Backend cập nhật trạng thái \texttt{is\_resolved = True} trong cơ sở dữ liệu PostgreSQL. \newline
+        4. Backend trả về phản hồi thành công, Frontend ẩn cảnh báo khỏi danh sách chờ. \\ \hline
+        \textbf{Hậu điều kiện} & Cảnh báo được lưu trữ vào lịch sử với trạng thái đã xử lý. \\ \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Đặc tả Use case: Gán thiết bị cho bệnh nhân}
+\begin{table}[H]
+    \centering
+    \caption{Đặc tả Use case: Gán thiết bị cho bệnh nhân (Assign Device)}
+    \label{tab:uc_gan_thiet_bi}
+    \begin{tabular}{|p{4cm}|p{10.5cm}|}
+        \hline
+        \textbf{Tên Use case} & \textbf{Gán thiết bị cho bệnh nhân} \\ \hline
+        \textbf{Tác nhân} & Nhân viên y tế \\ \hline
+        \textbf{Mô tả} & Liên kết một thiết bị giám sát vật lý với hồ sơ của một bệnh nhân cụ thể. \\ \hline
+        \textbf{Tiền điều kiện} & Thiết bị đang ở trạng thái trống (chưa gán) và hồ sơ bệnh nhân đã được tạo. \\ \hline
+        \textbf{Luồng sự kiện chính} & 
+        1. Nhân viên y tế chọn thiết bị từ danh sách và nhấn "Gán bệnh nhân". \newline
+        2. Hệ thống hiển thị danh sách bệnh nhân chưa có thiết bị. \newline
+        3. Nhân viên chọn bệnh nhân tương ứng và bấm lưu. \newline
+        4. Hệ thống Backend kiểm tra ràng buộc 1-1 (unique constraint) và cập nhật \texttt{wearer\_id} cho thiết bị. \\ \hline
+        \textbf{Hậu điều kiện} & Dữ liệu viễn trắc của thiết bị từ thời điểm này sẽ được tính toán dựa trên chiều cao của bệnh nhân được gán. \\ \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Đặc tả Use case: Xem thống kê vận động}
+\begin{table}[H]
+    \centering
+    \caption{Đặc tả Use case: Xem thống kê vận động}
+    \label{tab:uc_thong_ke}
+    \begin{tabular}{|p{4cm}|p{10.5cm}|}
+        \hline
+        \textbf{Tên Use case} & \textbf{Xem thống kê vận động} \\ \hline
+        \textbf{Tác nhân} & Nhân viên y tế, Quản trị viên \\ \hline
+        \textbf{Mô tả} & Tra cứu và xem biểu đồ thống kê mức độ vận động (số bước chân, quãng đường) theo tuần/tháng. \\ \hline
+        \textbf{Tiền điều kiện} & Bệnh nhân đã đeo thiết bị và sinh ra dữ liệu viễn trắc. \\ \hline
+        \textbf{Luồng sự kiện chính} & 
+        1. Người dùng chọn khoảng thời gian cần tra cứu trong tab Thống kê. \newline
+        2. Backend tiến hành truy vấn (Query) dữ liệu tổng hợp từ InfluxDB. \newline
+        3. Dữ liệu được trả về và Frontend sử dụng thư viện Recharts để vẽ biểu đồ trực quan. \\ \hline
+        \textbf{Hậu điều kiện} & Biểu đồ được hiển thị chính xác. \\ \hline
+    \end{tabular}
+\end{table}
 
 \section{Yêu cầu phi chức năng}
 \label{section:2.4}
-Trong phần này, sinh viên đưa ra các yêu cầu khác nếu có, bao gồm các yêu cầu phi chức năng như hiệu năng, độ tin cậy, tính dễ dùng, tính dễ bảo trì, hoặc các yêu cầu về mặt kỹ thuật như về CSDL, công nghệ sử dụng, v.v.
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Hệ thống giám sát khẩn cấp đòi hỏi các tiêu chuẩn khắt khe về kỹ thuật và độ tin cậy:
+\begin{itemize}
+    \item \textbf{Độ trễ thấp (Low Latency):} Thời gian từ lúc thiết bị phát hiện té ngã đến khi chuông báo động vang lên trên màn hình Web của y tá phải dưới 1 giây.
+    \item \textbf{Độ tin cậy truyền thông:} Sử dụng ngăn xếp giao thức mạng qua giao tiếp PPPoS (Point-to-Point Protocol over Serial) trên module SIM 4G kết hợp cơ chế QoS của MQTT để đảm bảo gói tin cảnh báo luôn được gửi đi ngay cả trong điều kiện sóng yếu.
+    \item \textbf{Khả năng mở rộng (Scalability):} Kiến trúc Dual-Database giúp hệ thống xử lý đồng thời hàng nghìn luồng dữ liệu viễn trắc (InfluxDB) mà không gây tắc nghẽn cho các truy vấn quản lý (PostgreSQL).
+    \item \textbf{Tính bảo mật (Security):} Mọi API giao tiếp từ Frontend đều phải được xác thực thông qua JSON Web Token (JWT), chống rò rỉ thông tin cá nhân của bệnh nhân.
+\end{itemize}
 
 \end{document}

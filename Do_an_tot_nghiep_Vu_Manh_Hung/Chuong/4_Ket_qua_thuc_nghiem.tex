@@ -1,71 +1,81 @@
 \documentclass[../DoAn.tex]{subfiles}
 \begin{document}
 
-\section{Thiết kế kiến trúc}
-\subsection{Lựa chọn kiến trúc phần mềm}
-Mục này có độ dài từ một đến ba trang. Sinh viên cần lựa chọn kiến trúc phần mềm cho ứng dụng của mình như: kiến trúc ba lớp MVC, MVP, SOA, Microservice, v.v. rồi giải thích sơ bộ về kiến trúc đó (không giải thích chi tiết/dài dòng).
-Sử dụng kiến trúc phần mềm đã chọn ở trên, sinh viên mô tả kiến trúc cụ thể cho ứng dụng của mình. Gợi ý: sinh viên áp dụng lý thuyết chung vào hệ thống/sản phẩm của mình như thế nào, có thay đổi, bổ sung hoặc cải tiến gì không. Ví dụ, thành phần M trong kiến trúc lý thuyết MVC sẽ là những thành phần cụ thể nào (ví dụ: là interface I + class C1 + class C2, v.v.) trong kiến trúc phần mềm của sinh viên.
+\section{Phân tích và thiết kế hệ thống}
 
-\subsection{Thiết kế tổng quan}
-Sinh viên vẽ biểu đồ gói UML (UML package diagram), nêu rõ sự phụ thuộc giữa các gói (package). SV cần vẽ các gói sao cho chúng được phân theo các tầng rõ ràng, không được sắp đặt package lộn xộn trong hình vẽ. Sinh viên chú ý các quy tắc thiết kế (Các gói không phụ thuộc lẫn nhau, gói tầng dưới không phụ thuộc gói tầng trên, không phụ thuộc bỏ qua tầng, v.v.) và cần giải thích sơ lược về mục đích/nhiệm vụ của từng package. SV tham khảo ví dụ minh họa trong Hình \ref{fig:Fig1}
-\begin{figure}[H]
-    \centering
-    \includegraphics{Hinhve/Picture1.png}
-    \caption{Ví dụ biểu đồ phụ thuộc gói}
-    \label{fig:Fig1}
-\end{figure}
-\subsection{Thiết kế chi tiết gói}
-Sinh viên thiết kế và lần lượt vẽ biểu đồ thiết kế cho từng package, hoặc một nhóm các package liên quan để giải quyết một vấn đề gì đó. Khi vẽ thiết kế gói, sinh viên chỉ cần đưa tên lớp, không cần chỉ ra các thành viên phương thức và thuộc tính. SV tham khảo ví dụ minh họa trong Hình \ref{fig:Fig2}.
+\subsection{Kiến trúc phần mềm Firmware}
+Phần sụn (firmware) trên vi điều khiển ESP32-S3 được thiết kế theo mô hình Hướng sự kiện (Event-Driven) và Máy trạng thái hữu hạn (FSM). Kiến trúc này giúp hệ thống hoạt động ổn định, phân tách rõ ràng các luồng xử lý và tối ưu hóa tài nguyên khi tích hợp mô hình học máy nhúng (TinyML). Hệ thống được chia thành ba lớp chính:
+\begin{itemize}
+    \item \textbf{Lớp Ứng dụng (Application Layer):} Bao gồm hàm khởi tạo \texttt{app\_main} và máy trạng thái \texttt{sys\_manager} đóng vai trò là trung tâm điều phối các sự kiện của toàn hệ thống.
+    \item \textbf{Lớp Dịch vụ (Middleware/Service Layer):} Các tác vụ (task) chạy độc lập trên hệ điều hành thời gian thực FreeRTOS như \texttt{svc\_imu} (quản lý cảm biến và cửa sổ dữ liệu), \texttt{svc\_ai} (chạy nội suy mô hình AI), \texttt{svc\_network} (quản lý kết nối mạng 4G/WiFi), và \texttt{svc\_cloud} (quản lý giao thức MQTT).
+    \item \textbf{Lớp Trình điều khiển (Driver Layer):} Cung cấp giao tiếp trực tiếp với phần cứng, ví dụ như \texttt{drv\_mpu6050} (giao tiếp I2C) và \texttt{drv\_a7680c} (điều khiển nguồn và cung cấp giao thức mạng PPPoS cho module 4G LTE).
+\end{itemize}
 
-Sinh viên cần vẽ rõ ràng quan hệ giữa các lớp trong biểu đồ. Các quan hệ bao gồm: phụ thuộc (dependency), kết hợp (association), kết tập (aggregation), hợp thành (composition), kế thừa (inheritance), và thực thi (implementation). Các quan hệ này đều đã được minh họa trong \ref{fig:Fig2}.
+Hoạt động thu thập dữ liệu và nội suy AI được thiết kế theo cơ chế cửa sổ trượt (Sliding Window) để không làm gián đoạn quá trình lấy mẫu tần số cao (100Hz) của cảm biến, đảm bảo tính liên tục của dữ liệu thời gian thực.
 
-Sau khi vẽ hình minh họa, sinh viên cần giải thích ngắn gọn về thiết kế của mình. 
-
-\begin{figure}[H]
-    \centering
-    \includegraphics{Hinhve/Picture2.png}
-    \caption{Ví dụ thiết kế gói}
-    \label{fig:Fig2}
-\end{figure}
-
-\section{Thiết kế chi tiết}
-\subsection{Thiết kế giao diện}
-Phần này có độ dài từ hai đến ba trang. Sinh viên đặc tả thông tin về màn hình mà ứng dụng của mình hướng tới, bao gồm độ phân giải màn hình, kích thước màn hình, số lượng màu sắc hỗ trợ, v.v. Tiếp đến, sinh viên đưa ra các thống nhất/chuẩn hóa của mình khi thiết kế giao diện như thiết kế nút, điều khiển, vị trí hiển thị thông điệp phản hồi, phối màu, v.v. Sau cùng sinh viên đưa ra một số hình ảnh minh họa thiết kế giao diện cho các chức năng quan trọng nhất. Lưu ý, sinh viên không nhầm lẫn giao diện thiết kế với giao diện của sản phẩm sau cùng.
-\subsection{Thiết kế lớp}
-Phần này có độ dài từ ba đến bốn trang. Sinh viên trình bày thiết kế chi tiết các thuộc tính và phương thức cho một số lớp chủ đạo/quan trọng nhất của ứng dụng (từ 2-4 lớp). Thiết kế chi tiết cho các lớp khác, nếu muốn trình bày, sinh viên đưa vào phần phụ lục.
-
-Để minh họa thiết kế lớp, sinh viên thiết kế luồng truyền thông điệp giữa các đối tượng tham gia cho 2 đến 3 use case quan trọng nào đó bằng biểu đồ trình tự (hoặc biểu đồ giao tiếp).
 \subsection{Thiết kế cơ sở dữ liệu}
-Phần này có độ dài từ hai đến bốn trang. Sinh viên thiết kế, vẽ và giải thích biểu đồ thực thể liên kết (E-R diagram). Từ đó, sinh viên thiết kế cơ sở dữ liệu tùy theo hệ quản trị cơ sở dữ liệu mà mình sử dụng (SQL, NoSQL, Firebase, v.v.)
+Hệ thống sử dụng mô hình cơ sở dữ liệu kép (Dual-Database) để đáp ứng đồng thời yêu cầu quản lý thông tin phức tạp có tính liên kết và khả năng lưu trữ dữ liệu thời gian thực với tần suất lớn.
+\begin{itemize}
+    \item \textbf{Cơ sở dữ liệu quan hệ (PostgreSQL):} Được sử dụng để quản lý thông tin siêu dữ liệu (metadata). Các thực thể chính bao gồm tổ chức (\texttt{organizations}), người dùng (\texttt{users}), người bệnh đeo thiết bị (\texttt{wearers}), danh mục thiết bị (\texttt{devices}), và lịch sử cảnh báo (\texttt{alerts}). Mô hình này cho phép gán/hủy linh hoạt một thiết bị cho một người đeo cụ thể, lưu trữ hồ sơ y tế cơ bản, đồng thời theo dõi trạng thái pin và thời gian online của thiết bị.
+    \item \textbf{Cơ sở dữ liệu chuỗi thời gian (InfluxDB):} Chuyên dụng để lưu trữ dữ liệu có tính liên tục và số lượng lớn. Trong giai đoạn thu thập dữ liệu (Phase 1), InfluxDB lưu trữ dữ liệu cảm biến thô (\texttt{imu\_raw}) thành từng lô (batch) phục vụ huấn luyện mô hình học máy. Trong giai đoạn vận hành thực tế (Phase 2), nó lưu trữ thông tin đo đếm bước chân và quãng đường di chuyển (\texttt{telemetry}) để ứng dụng web có thể vẽ biểu đồ theo dõi sức khỏe một cách trực quan.
+\end{itemize}
 
-\section{Xây dựng ứng dụng}
-\subsection{Thư viện và công cụ sử dụng}
-Sinh viên liệt kê các công cụ, ngôn ngữ lập trình, API, thư viện, IDE, công cụ kiểm thử, v.v. mà mình sử dụng để phát triển ứng dụng. Mỗi công cụ phải được chỉ rõ phiên bản sử dụng. SV nên kẻ bảng mô tả tương tự như Bảng \ref{table:my_label}. Nếu có nhiều nội dung trình bày, sinh viên cần xoay ngang bảng.
+\subsection{Thiết kế giao thức truyền thông}
+Hệ thống phân tách luồng dữ liệu thành hai lớp giao thức riêng biệt để đảm bảo hiệu năng và tính bảo mật:
+\begin{itemize}
+    \item \textbf{Lớp Thời gian thực (MQTT):} Đảm nhiệm việc truyền tải dữ liệu tức thời giữa thiết bị IoT và máy chủ. Broker MQTT sử dụng cấu trúc topic thống nhất. Thiết bị gửi các gói tin trạng thái định kỳ hoặc phát sự kiện tức thời khi phát hiện té ngã (\texttt{alert\_type: FALL\_DETECTED}). Việc sử dụng MQTT giúp tối thiểu hóa băng thông và đảm bảo duy trì kết nối ổn định trong môi trường mạng di động 4G.
+    \item \textbf{Lớp Quản lý (HTTP REST API):} Cung cấp các điểm cuối (endpoints) để ứng dụng web (Frontend) giao tiếp với máy chủ (Backend). Các chức năng chính bao gồm xác thực (Authentication), quản lý thông tin người bệnh, quản lý trạng thái thiết bị, truy xuất lịch sử cảnh báo và tổng hợp số liệu thống kê. Mọi giao dịch qua REST API đều yêu cầu đính kèm mã thông báo bảo mật (Access Token). Điểm đặc biệt của kiến trúc này là cơ chế "Đồng bộ cảnh báo lai" (Hybrid Alert Sync), cho phép Frontend hiển thị cảnh báo té ngã tức thời qua MQTT với một UUID tạm thời, và sau đó được Backend xử lý và liên kết đồng bộ với cơ sở dữ liệu một cách liền mạch.
+\end{itemize}
 
-\begin{table}[H]
-\centering{}
-    \begin{tabular}{lll}
-        \hline
-        \textbf{Mục đích} & \textbf{Công cụ}       & \textbf{Địa chỉ URL}    \\ \hline
-        IDE lập trình     & Eclipse Oxygen a64 bit & http://www.eclipse.org/ \\ \hline
-        v.v.              & v.v.                   & v.v.                    \\ \hline
-        \end{tabular}
-    \caption{Danh sách thư viện và công cụ sử dụng}
-    \label{fig:my_label}
-\end{table}
+\section{Triển khai và Xây dựng ứng dụng}
 
-\subsection{Kết quả đạt được}
-Sinh viên trước tiên mô tả kết quả đạt được của mình là gì, ví dụ như các sản phẩm được đóng gói là gì, bao gồm những thành phần nào, ý nghĩa, vai trò?
+\subsection{Triển khai thuật toán xử lý tín hiệu IMU (Bộ lọc Kalman)}
+Khi tính toán góc nghiêng (Roll và Pitch) từ cảm biến quán tính 6 bậc tự do (IMU), gia tốc kế thường tính toán góc tĩnh rất chính xác nhưng lại chịu nhiễu mạnh (high-frequency noise) khi thiết bị va đập hoặc có chuyển động đột ngột. Ngược lại, cảm biến góc quay (Gyroscope) phản ứng rất nhanh với chuyển động nhưng lại sinh ra sai số trôi tích lũy (drift) khi thực hiện tích phân vận tốc góc theo thời gian.
 
-Sinh viên cần thống kê các thông tin về ứng dụng của mình như: số dòng code, số lớp, số gói, dung lượng toàn bộ mã nguồn, dung lượng của từng sản phẩm đóng gói, v.v. Tương tự như phần liệt kê về công cụ sử dụng, sinh viên cũng nên dùng bảng để mô tả phần thông tin thống kê này.
+Để khắc phục nhược điểm này, hệ thống triển khai một thư viện bộ lọc số (\texttt{lib\_kalman}) ứng dụng Bộ lọc Kalman 1 chiều. Thuật toán tiến hành dung hợp dữ liệu (sensor fusion) từ cả hai loại cảm biến thông qua hai bước chính:
+\begin{enumerate}
+    \item \textbf{Bước Dự báo (Predict):} Sử dụng vận tốc góc từ Gyroscope để cập nhật giá trị dự báo cho góc nghiêng ở chu kỳ hiện tại và tính toán sai số trôi.
+    \item \textbf{Bước Cập nhật (Update):} Sử dụng góc thực tế tính toán từ Gia tốc kế để hiệu chỉnh lại kết quả dự báo, qua đó triệt tiêu sai số trôi tích lũy.
+\end{enumerate}
 
-\subsection{Minh họa các chức năng chính}
-Sinh viên lựa chọn và đưa ra màn hình cho các chức năng chính, quan trọng, và thú vị nhất. Mỗi giao diện cần phải có lời giải thích ngắn gọn. Khi giải thích, sinh viên có thể kết hợp với các chú thích ở trong hình ảnh giao diện.
+Trong quá trình tinh chỉnh (tuning) thực tế, tham số phương sai nhiễu đo lường của gia tốc kế (\texttt{R\_measure}) được thiết lập ở mức độ phù hợp (~0.03). Cấu hình này giúp bộ lọc giảm bớt sự tin tưởng vào gia tốc kế trong các pha va chạm mạnh (đặc trưng của hành vi té ngã), từ đó giữ cho góc ước lượng đầu ra luôn trơn tru, mượt mà và giảm thiểu đáng kể các trường hợp báo động giả (False Positive) cho hệ thống nhận diện.
 
-\section{Kiểm thử}
-Phần này có độ dài từ hai đến ba trang. Sinh viên thiết kế các trường hợp kiểm thử cho hai đến ba chức năng quan trọng nhất. Sinh viên cần chỉ rõ các kỹ thuật kiểm thử đã sử dụng. Chi tiết các trường hợp kiểm thử khác, nếu muốn trình bày, sinh viên đưa vào phần phụ lục.
-Sinh viên sau cùng tổng kết về số lượng các trường hợp kiểm thử và kết quả kiểm thử. Sinh viên cần phân tích lý do nếu kết quả kiểm thử không đạt.
-\section{Triển khai}
-Sinh viên trình bày mô hình và/hoặc cách thức triển khai thử nghiệm/thực tế. Ứng dụng của sinh viên được triển khai trên server/thiết bị gì, cấu hình như thế nào. Kết quả triển khai thử nghiệm nếu có (số lượng người dùng, số lượng truy cập, thời gian phản hồi, phản hồi người dùng, khả năng chịu tải, các thống kê, v.v.)
+\subsection{Huấn luyện và triển khai mô hình học máy (TinyML)}
+Trong giai đoạn phát triển mô hình nhận diện hành vi và phát hiện té ngã, hệ thống sử dụng bộ dữ liệu công khai SisFall làm nguồn dữ liệu cốt lõi. Bộ dữ liệu này chứa các bản ghi hoạt động thường ngày (ADL) và các kịch bản té ngã được thu thập từ nhiều đối tượng khác nhau, đảm bảo tính đa dạng và độ tin cậy cao.
+
+Quá trình tiền xử lý dữ liệu (Preprocessing) đóng vai trò then chốt để chuẩn hóa dữ liệu trước khi nạp (feed) vào mạng nơ-ron:
+\begin{itemize}
+    \item \textbf{Giảm tần số lấy mẫu (Downsampling):} Dữ liệu gốc của bộ SisFall có tần số lấy mẫu là 200Hz. Nhằm tối ưu hóa tài nguyên tính toán trên vi điều khiển mà vẫn giữ được các đặc trưng tần số quan trọng của chuyển động, hệ thống tiến hành giảm tần số lấy mẫu (downsample) xuống còn 100Hz.
+    \item \textbf{Phân mảnh cửa sổ trượt (Windowing):} Chuỗi dữ liệu thời gian thực sau đó được băm (split) thành các cửa sổ trượt (sliding window) có kích thước cố định kèm theo độ trễ gối nhau (overlap). Quá trình này giúp mô hình nắm bắt được toàn vẹn thông tin động học diễn ra trong một chu kỳ thời gian liên tục (từ lúc bắt đầu mất thăng bằng cho đến khi va chạm mặt đất).
+\end{itemize}
+
+Về thiết kế nhãn phân loại, thay vì chỉ thực hiện bài toán phân loại nhị phân (Ngã / Không ngã) dễ dẫn đến mất cân bằng dữ liệu, hệ thống chia dữ liệu thành 5 nhãn mục tiêu (Classes) riêng biệt:
+\begin{enumerate}
+    \item \textbf{Walk (Đi bộ) \& Run (Chạy):} Đại diện cho các hoạt động di chuyển có nhịp điệu.
+    \item \textbf{Idle (Đứng/Ngồi yên):} Đại diện cho trạng thái tĩnh.
+    \item \textbf{Trans (Chuyển tiếp):} Đại diện cho các hành vi chuyển đổi (ví dụ: từ ngồi sang đứng, nằm sang ngồi). Các hành động này thường sinh ra xung gia tốc tức thời rất giống với ngã. Việc phân lập nhãn Trans giúp mô hình học cách phân biệt và loại bỏ gần như hoàn toàn các cảnh báo giả (False Positive) từ sinh hoạt thường ngày.
+    \item \textbf{Fall (Té ngã):} Nhãn đích nguy hiểm cần kích hoạt chu trình truyền tin khẩn cấp.
+\end{enumerate}
+
+Kiến trúc 5 nhãn này không chỉ giúp phát hiện té ngã chính xác hơn mà còn cung cấp dữ liệu viễn trắc để hệ thống Backend tổng hợp báo cáo vận động hàng ngày của người cao tuổi. Khi hoàn tất huấn luyện, mô hình được biên dịch thành dạng mảng mã nguồn C/C++ (\texttt{model\_data.cc}) để nạp thẳng vào vi điều khiển ESP32-S3.
+
+\subsection{Triển khai phần mềm máy chủ (Backend)}
+Phần mềm máy chủ (Backend) được phát triển dựa trên \textit{framework} FastAPI của ngôn ngữ Python, tận dụng triệt để tính năng xử lý bất đồng bộ (Asynchronous) để đạt hiệu suất cao. Hệ thống Backend đóng vai trò là cầu nối cốt lõi giữa thiết bị phần cứng, cơ sở dữ liệu và ứng dụng người dùng, với các nhiệm vụ chính:
+\begin{itemize}
+    \item \textbf{Cung cấp giao diện lập trình ứng dụng (RESTful API):} Xây dựng các điểm cuối (\textit{endpoints}) chuẩn hóa theo phiên bản (VD: \texttt{/api/v1/devices}, \texttt{/api/v1/wearers}) phục vụ việc quản trị dữ liệu, phân quyền và truy vấn lịch sử cảnh báo.
+    \item \textbf{Đồng bộ dữ liệu thời gian thực:} Tích hợp luồng lắng nghe trực tiếp từ broker MQTT để tự động bóc tách các gói tin viễn trắc (\texttt{telemetry}) và thông điệp cảnh báo té ngã từ thiết bị gửi lên.
+    \item \textbf{Phân luồng cơ sở dữ liệu kép:} Đóng vai trò định tuyến dữ liệu thông minh; các thông tin cấu trúc (thiết bị, bệnh nhân) được lưu vào PostgreSQL thông qua kỹ thuật ánh xạ đối tượng-quan hệ (ORM), trong khi dữ liệu chuỗi thời gian (số bước chân) được ghi trực tiếp vào InfluxDB.
+\end{itemize}
+
+\subsection{Triển khai giao diện giám sát (Frontend)}
+Giao diện người dùng (Frontend) được thiết kế chuyên biệt để hỗ trợ nhân viên y tế giám sát đồng thời số lượng lớn thiết bị trong viện dưỡng lão. Ứng dụng được xây dựng trên nền tảng Next.js 16 (kiến trúc App Router) kết hợp cùng Turbopack, với các đặc điểm kỹ thuật nổi bật:
+\begin{itemize}
+    \item \textbf{Quản lý trạng thái và Dữ liệu:} Sử dụng thư viện \texttt{TanStack Query} để tự động đồng bộ và lưu bộ nhớ đệm (cache) dữ liệu từ Backend, kết hợp cùng \texttt{Zustand} để quản lý các trạng thái cục bộ của giao diện.
+    \item \textbf{Xử lý cảnh báo tức thời (Real-time Alerts):} Giao diện được tích hợp thư viện \texttt{MQTT.js} kết nối trực tiếp với broker thông qua WebSockets. Cơ chế này đảm bảo khi có sự kiện té ngã, cảnh báo đỏ toàn màn hình (Overlay) và âm thanh báo động sẽ được kích hoạt ngay lập tức với độ trễ chưa tới 1 giây, hoạt động độc lập với luồng API truyền thống.
+    \item \textbf{Thẩm mỹ và trải nghiệm người dùng (UI/UX):} Thiết kế sử dụng \texttt{Tailwind CSS} và thư viện \texttt{Shadcn UI}, mang lại một giao diện hiện đại, trực quan, hỗ trợ tính năng đáp ứng (Responsive) tốt trên cả máy tính bảng và màn hình giám sát lớn.
+\end{itemize}
+
+\section{Kết quả đạt được và Kiểm thử}
+\textit{(Các phần về kết quả kiểm thử, giao diện ứng dụng, hiệu năng hệ thống sẽ được bổ sung sau khi dự án hoàn thiện việc thu thập dữ liệu và tích hợp hệ thống thực tế.)}
 
 \end{document}
