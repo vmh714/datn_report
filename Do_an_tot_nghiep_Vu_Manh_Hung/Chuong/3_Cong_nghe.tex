@@ -148,7 +148,7 @@ Dữ liệu thu thập từ các cảm biến IoT (gia tốc, số bước chân
 Do đó, đồ án sử dụng \textbf{InfluxDB}, một hệ quản trị cơ sở dữ liệu chuỗi thời gian chuyên biệt. InfluxDB lưu trữ dữ liệu theo cấu trúc Measurement (bảng), Tags (thẻ phân loại có đánh chỉ mục, ví dụ: \texttt{device\_id}), và Fields (giá trị thực tế, ví dụ: \texttt{accX, accY}). Với cơ chế nén dữ liệu cực tốt và ngôn ngữ truy vấn Flux mạnh mẽ, InfluxDB có thể đáp ứng hàng chục nghìn luồng ghi (write) mỗi giây và truy xuất dữ liệu lịch sử cực nhanh để vẽ biểu đồ giám sát.
 
 \subsection{Cơ sở dữ liệu quan hệ PostgreSQL}
-Ngược lại với dữ liệu cảm biến, các thông tin về hồ sơ bệnh nhân, danh sách thiết bị, phân quyền y tá và lịch sử cảnh báo lại có tính quan hệ chặt chẽ và yêu cầu tính toàn vẹn dữ liệu (ACID) tuyệt đối. Để giải quyết bài toán này, đồ án sử dụng \textbf{PostgreSQL} - hệ quản trị cơ sở dữ liệu quan hệ mã nguồn mở mạnh mẽ nhất hiện nay. PostgreSQL xử lý việc liên kết (JOIN) các bảng dữ liệu phức tạp, đảm bảo rằng một thiết bị tại một thời điểm chỉ được gán cho một bệnh nhân duy nhất (Unique Constraint), và duy trì tính nhất quán cho toàn bộ hệ thống quản trị.
+Ngược lại với dữ liệu cảm biến, các thông tin về hồ sơ bệnh nhân, danh sách thiết bị, phân quyền y tá và lịch sử cảnh báo lại có tính quan hệ chặt chẽ và yêu cầu tính toàn vẹn dữ liệu (ACID) tuyệt đối. Để giải quyết bài toán này, đồ án sử dụng \textbf{PostgreSQL} - hệ quản trị cơ sở dữ liệu quan hệ mã nguồn mở mạnh mẽ nhất hiện nay. PostgreSQL xử lý việc liên kết (JOIN) các bảng dữ liệu phức tạp, đảm bảo rằng một thiết bị tại một thời điểm chỉ được gán cho một bệnh nhân duy nhất (Unique Constraint), và duy trì tính nhất quán cho toàn bộ hệ thống quản trị. Đặc biệt, PostgreSQL được thiết kế theo kiến trúc \textbf{Đa khách thuê (Multi-tenancy)}, bổ sung trường \texttt{org\_id} vào các bảng nhằm cách ly dữ liệu an toàn giữa các viện dưỡng lão khác nhau.
 
 % \begin{figure}[H]
 %     \centering
@@ -176,10 +176,11 @@ Trái tim của máy chủ hệ thống được xây dựng bằng \textbf{Fast
 % \end{figure}
 
 \subsection{Framework Frontend Next.js và Tailwind CSS}
-Giao diện quản lý dành cho nhân viên y tế (Dashboard) được xây dựng bằng \textbf{Next.js} (phiên bản App Router), một framework phát triển dựa trên thư viện ReactJS.
+Giao diện quản lý dành cho nhân viên y tế (Dashboard) được xây dựng bằng \textbf{Next.js} (phiên bản App Router) kết hợp cùng công cụ đóng gói \textbf{Turbopack}, một framework phát triển dựa trên thư viện ReactJS.
 \begin{itemize}
     \item \textbf{Next.js:} Khác với ReactJS thuần túy (chỉ render ở phía client), Next.js cung cấp khả năng kết hợp giữa Server-Side Rendering (SSR) và Client-Side Rendering (CSR). Nhờ đó, ứng dụng tải trang cực nhanh, tối ưu trải nghiệm người dùng và giúp bảo mật các khóa truy cập API quan trọng ở phía máy chủ.
-    \item \textbf{Tailwind CSS:} Đây là một framework CSS theo phong cách \textit{Utility-first}. Thay vì phải viết các file CSS độc lập và đặt tên class thủ công, Tailwind cho phép lập trình viên áp dụng trực tiếp các class định dạng ngay trong mã HTML/JSX. Công cụ này giúp tạo ra một giao diện Web hiện đại, độ tùy biến cao, hỗ trợ thiết kế đáp ứng (Responsive Design) mượt mà trên cả màn hình máy tính và thiết bị di động của bác sĩ.
+    \item \textbf{Quản lý trạng thái (State Management):} Hệ thống ứng dụng \textbf{TanStack Query} để tối ưu hóa việc gọi API, quản lý bộ nhớ đệm (caching) và đồng bộ dữ liệu với máy chủ, kết hợp với \textbf{Zustand} để quản lý các trạng thái giao diện cục bộ một cách nhẹ nhàng.
+    \item \textbf{Tailwind CSS và Shadcn UI:} Đây là một framework CSS theo phong cách \textit{Utility-first} kết hợp cùng thư viện UI components hiện đại. Thay vì phải viết các file CSS độc lập, lập trình viên áp dụng trực tiếp các class định dạng ngay trong JSX. Công cụ này giúp tạo ra một giao diện Web trực quan, độ tùy biến cao, hỗ trợ thiết kế đáp ứng (Responsive Design) mượt mà.
 \end{itemize}
 
 % \begin{figure}[H]

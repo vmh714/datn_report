@@ -250,22 +250,21 @@ Sinh viên cần tiến hành phân tích, so sánh, đánh giá chi tiết ưu 
 
 \section{Tổng quan chức năng}
 \label{section:2.2}
-Phần này mô tả tổng quan các chức năng cốt lõi của hệ thống, dựa trên định hướng phân chia hai vai trò người dùng chính: Quản trị viên (Admin) và Nhân viên y tế (Medical Staff), cùng với tác nhân hệ thống là Thiết bị giám sát (Edge Node).
+Phần này mô tả tổng quan các chức năng cốt lõi của hệ thống, dựa trên định hướng gồm một vai trò người dùng (Nhân viên y tế) và một tác nhân hệ thống (Thiết bị giám sát).
 
 \subsection{Biểu đồ use case tổng quát}
 \label{subsection:2.2.1}
-Biểu đồ use case tổng quát mô tả các tương tác chính giữa người dùng và hệ thống. Các tác nhân (Actors) tham gia bao gồm:
+Biểu đồ use case tổng quát mô tả các tương tác chính giữa con người và hệ thống. Các tác nhân (Actors) tham gia bao gồm:
 \begin{itemize}
-    \item \textbf{Quản trị viên (Admin):} Đảm nhiệm vai trò thiết lập hệ thống, quản lý cơ sở dữ liệu thiết bị và cấp quyền cho nhân viên y tế.
-    \item \textbf{Nhân viên y tế (Medical Staff):} Người trực tiếp sử dụng hệ thống để giám sát, theo dõi hồ sơ bệnh nhân, quản lý việc cấp phát thiết bị và xử lý các sự cố té ngã.
-    \item \textbf{Thiết bị giám sát (ESP32 Node):} Tác nhân hệ thống (System Actor), liên tục gửi dữ liệu viễn trắc (telemetry) thông qua giao thức PPPoS trên mạng 4G LTE và kích hoạt các cảnh báo (alerts) khẩn cấp.
+    \item \textbf{Nhân viên y tế (Medical Staff):} Người sử dụng hệ thống qua giao diện Dashboard để giám sát thời gian thực, theo dõi hồ sơ bệnh nhân, thiết lập/quản lý thiết bị và xử lý các sự cố té ngã khẩn cấp.
+    \item \textbf{Thiết bị giám sát (ESP32 Node):} Tác nhân hệ thống (System Actor), liên tục thu thập và gửi dữ liệu viễn trắc (telemetry) thông qua giao thức PPPoS trên mạng 4G LTE và kích hoạt các cảnh báo (alerts) khẩn cấp.
 \end{itemize}
 
-Các ca sử dụng (Use case) cốt lõi bao gồm: Đăng nhập \& Xác thực, Quản lý thiết bị, Quản lý nhân sự, Quản lý bệnh nhân (Wearer), Gán/Thu hồi thiết bị, Giám sát thời gian thực, Xử lý cảnh báo té ngã, và Xem thống kê vận động.
+Các ca sử dụng (Use case) cốt lõi bao gồm: Đăng nhập \& Xác thực, Quản lý thiết bị, Quản lý bệnh nhân (Wearer), Gán/Thu hồi thiết bị, Giám sát thời gian thực, Xử lý cảnh báo té ngã, và Xem thống kê vận động.
 
 \subsection{Biểu đồ use case phân rã "Giám sát thời gian thực"}
 \label{subsection:2.2.2}
-Use case "Giám sát thời gian thực" yêu cầu hệ thống cung cấp cho nhân viên y tế một giao diện Dashboard tổng quan. Thông qua giao diện này, nhân viên y tế có thể theo dõi danh sách toàn bộ các thiết bị đang hoạt động, xem trạng thái kết nối mạng, mức pin hiện tại của từng thiết bị. Đặc biệt, chức năng này sẽ liên tục lắng nghe các gói tin từ MQTT Broker để ngay lập tức hiển thị cảnh báo (kèm âm thanh và viền đỏ nhấp nháy) khi có sự cố té ngã xảy ra. Biểu đồ phân rã cho nhóm chức năng này tập trung vào luồng hiển thị dữ liệu và cơ chế cảnh báo.
+Use case "Giám sát thời gian thực" yêu cầu hệ thống cung cấp cho nhân viên y tế một giao diện Dashboard tổng quan. Thông qua giao diện này, nhân viên y tế có thể theo dõi danh sách toàn bộ các thiết bị đang hoạt động, xem trạng thái kết nối mạng, mức pin hiện tại của từng thiết bị. Đặc biệt, chức năng này ứng dụng cơ chế \textbf{Đồng bộ cảnh báo lai (Hybrid Alert Sync)}, liên tục lắng nghe các gói tin từ MQTT Broker qua WebSocket để ngay lập tức hiển thị cảnh báo (kèm âm thanh và viền đỏ nhấp nháy) khi có sự cố té ngã xảy ra với độ trễ chưa tới 1 giây, đồng thời tự động cập nhật dữ liệu từ API. Biểu đồ phân rã cho nhóm chức năng này tập trung vào luồng hiển thị dữ liệu và cơ chế cảnh báo.
 
 % \begin{figure}[H]
 %     \centering
@@ -391,7 +390,7 @@ Dưới đây là đặc tả chi tiết của 4 Use Case quan trọng nhất, p
     \begin{tabular}{|p{4cm}|p{10.5cm}|}
         \hline
         \textbf{Tên Use case} & \textbf{Xem thống kê vận động} \\ \hline
-        \textbf{Tác nhân} & Nhân viên y tế, Quản trị viên \\ \hline
+        \textbf{Tác nhân} & Nhân viên y tế \\ \hline
         \textbf{Mô tả} & Tra cứu và xem biểu đồ thống kê mức độ vận động (số bước chân, quãng đường) theo tuần/tháng. \\ \hline
         \textbf{Tiền điều kiện} & Bệnh nhân đã đeo thiết bị và sinh ra dữ liệu viễn trắc. \\ \hline
         \textbf{Luồng sự kiện chính} & 
@@ -408,8 +407,8 @@ Hệ thống giám sát khẩn cấp đòi hỏi các tiêu chuẩn khắt khe v
 \begin{itemize}
     \item \textbf{Độ trễ thấp (Low Latency):} Thời gian từ lúc thiết bị phát hiện té ngã đến khi chuông báo động vang lên trên màn hình Web của y tá phải dưới 1 giây.
     \item \textbf{Độ tin cậy truyền thông:} Sử dụng ngăn xếp giao thức mạng qua giao tiếp PPPoS (Point-to-Point Protocol over Serial) trên module SIM 4G kết hợp cơ chế QoS của MQTT để đảm bảo gói tin cảnh báo luôn được gửi đi ngay cả trong điều kiện sóng yếu.
-    \item \textbf{Khả năng mở rộng (Scalability):} Kiến trúc Dual-Database giúp hệ thống xử lý đồng thời hàng nghìn luồng dữ liệu viễn trắc (InfluxDB) mà không gây tắc nghẽn cho các truy vấn quản lý (PostgreSQL).
-    \item \textbf{Tính bảo mật (Security):} Mọi API giao tiếp từ Frontend đều phải được xác thực thông qua JSON Web Token (JWT), chống rò rỉ thông tin cá nhân của bệnh nhân.
+    \item \textbf{Khả năng mở rộng (Scalability):} Kiến trúc Dual-Database giúp hệ thống xử lý đồng thời hàng nghìn luồng dữ liệu viễn trắc (InfluxDB) mà không gây tắc nghẽn cho các truy vấn quản lý (PostgreSQL). Hỗ trợ kiến trúc đa khách thuê (Multi-tenancy) cho phép quản lý đồng thời nhiều viện dưỡng lão trên cùng một máy chủ vật lý.
+    \item \textbf{Tính bảo mật (Security):} Mọi API giao tiếp từ Frontend đều phải được xác thực thông qua JSON Web Token (JWT), kết hợp phân quyền quản trị đa tổ chức, chống rò rỉ thông tin cá nhân của bệnh nhân.
 \end{itemize}
 
 \end{document}

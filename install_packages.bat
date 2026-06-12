@@ -8,7 +8,7 @@ tlmgr update --self
 
 echo.
 echo Dang cai dat khoang 40 goi can thiet...
-tlmgr install vntex fancybox enumitem subfiles titlesec chngcntr pdflscape algorithm2e capt-of multirow fancyhdr biblatex biber biblatex-ieee appendix caption listings float xurl glossaries setspace parskip blindtext ifoddpage xspace relsize supertabular hypcap etoolbox koma-script mfirstuc xfor datatool import tracklang geometry graphics psnfss amsmath amsfonts amscls tools
+tlmgr install vntex fancybox enumitem subfiles titlesec chngcntr pdflscape algorithm2e capt-of multirow fancyhdr biblatex biber biblatex-ieee appendix caption listings float xurl glossaries setspace parskip blindtext ifoddpage relsize supertabular hypcap etoolbox koma-script mfirstuc xfor datatool import tracklang geometry graphics psnfss amsmath amsfonts amscls tools
 
 echo.
 echo ========================================================

@@ -62,17 +62,17 @@ Kiến trúc 5 nhãn này không chỉ giúp phát hiện té ngã chính xác h
 \subsection{Triển khai phần mềm máy chủ (Backend)}
 Phần mềm máy chủ (Backend) được phát triển dựa trên \textit{framework} FastAPI của ngôn ngữ Python, tận dụng triệt để tính năng xử lý bất đồng bộ (Asynchronous) để đạt hiệu suất cao. Hệ thống Backend đóng vai trò là cầu nối cốt lõi giữa thiết bị phần cứng, cơ sở dữ liệu và ứng dụng người dùng, với các nhiệm vụ chính:
 \begin{itemize}
-    \item \textbf{Cung cấp giao diện lập trình ứng dụng (RESTful API):} Xây dựng các điểm cuối (\textit{endpoints}) chuẩn hóa theo phiên bản (VD: \texttt{/api/v1/devices}, \texttt{/api/v1/wearers}) phục vụ việc quản trị dữ liệu, phân quyền và truy vấn lịch sử cảnh báo.
-    \item \textbf{Đồng bộ dữ liệu thời gian thực:} Tích hợp luồng lắng nghe trực tiếp từ broker MQTT để tự động bóc tách các gói tin viễn trắc (\texttt{telemetry}) và thông điệp cảnh báo té ngã từ thiết bị gửi lên.
-    \item \textbf{Phân luồng cơ sở dữ liệu kép:} Đóng vai trò định tuyến dữ liệu thông minh; các thông tin cấu trúc (thiết bị, bệnh nhân) được lưu vào PostgreSQL thông qua kỹ thuật ánh xạ đối tượng-quan hệ (ORM), trong khi dữ liệu chuỗi thời gian (số bước chân) được ghi trực tiếp vào InfluxDB.
+    \item \textbf{Cung cấp giao diện lập trình ứng dụng (RESTful API):} Xây dựng các điểm cuối (\textit{endpoints}) chuẩn hóa theo phiên bản (VD: \texttt{/api/v1/devices}, \texttt{/api/v1/wearers}) phục vụ việc quản trị dữ liệu, phân quyền JWT và truy vấn lịch sử cảnh báo. Hệ thống đảm bảo tính toàn vẹn dữ liệu bằng \textbf{Unique Device Assignment} (Một bệnh nhân chỉ gắn với một thiết bị).
+    \item \textbf{Thuật toán nội suy quãng đường:} Khi nhận luồng dữ liệu số bước chân từ gia tốc kế qua MQTT, Backend tự động truy vấn chiều cao của bệnh nhân từ PostgreSQL, áp dụng công thức sinh trắc học để tính ra quãng đường di chuyển thực tế và ghi vào InfluxDB mà không cần module GPS.
+    \item \textbf{Phân luồng cơ sở dữ liệu kép đa khách thuê:} Đóng vai trò định tuyến dữ liệu thông minh. Các thông tin cấu trúc (thiết bị, bệnh nhân) được lưu vào PostgreSQL thông qua ORM với trường \texttt{org\_id} để cách ly dữ liệu giữa các viện dưỡng lão (Multi-tenancy), trong khi dữ liệu chuỗi thời gian được ghi vào InfluxDB.
 \end{itemize}
 
 \subsection{Triển khai giao diện giám sát (Frontend)}
 Giao diện người dùng (Frontend) được thiết kế chuyên biệt để hỗ trợ nhân viên y tế giám sát đồng thời số lượng lớn thiết bị trong viện dưỡng lão. Ứng dụng được xây dựng trên nền tảng Next.js 16 (kiến trúc App Router) kết hợp cùng Turbopack, với các đặc điểm kỹ thuật nổi bật:
 \begin{itemize}
-    \item \textbf{Quản lý trạng thái và Dữ liệu:} Sử dụng thư viện \texttt{TanStack Query} để tự động đồng bộ và lưu bộ nhớ đệm (cache) dữ liệu từ Backend, kết hợp cùng \texttt{Zustand} để quản lý các trạng thái cục bộ của giao diện.
-    \item \textbf{Xử lý cảnh báo tức thời (Real-time Alerts):} Giao diện được tích hợp thư viện \texttt{MQTT.js} kết nối trực tiếp với broker thông qua WebSockets. Cơ chế này đảm bảo khi có sự kiện té ngã, cảnh báo đỏ toàn màn hình (Overlay) và âm thanh báo động sẽ được kích hoạt ngay lập tức với độ trễ chưa tới 1 giây, hoạt động độc lập với luồng API truyền thống.
-    \item \textbf{Thẩm mỹ và trải nghiệm người dùng (UI/UX):} Thiết kế sử dụng \texttt{Tailwind CSS} và thư viện \texttt{Shadcn UI}, mang lại một giao diện hiện đại, trực quan, hỗ trợ tính năng đáp ứng (Responsive) tốt trên cả máy tính bảng và màn hình giám sát lớn.
+    \item \textbf{Quản lý trạng thái và Dữ liệu:} Sử dụng thư viện \texttt{TanStack Query} để tự động đồng bộ và lưu bộ nhớ đệm (cache) dữ liệu từ Backend, kết hợp cùng \texttt{Zustand} để quản lý các trạng thái cục bộ.
+    \item \textbf{Cơ chế Đồng bộ cảnh báo lai (Hybrid Alert Sync):} Giao diện tích hợp \texttt{MQTT.js} kết nối trực tiếp với Broker qua WebSockets. Khi có sự kiện té ngã, cảnh báo khẩn cấp (âm thanh và banner) xuất hiện ngay lập tức (trễ < 1s). Song song đó, Frontend chủ động gửi tín hiệu "invalidate cache" để TanStack Query kéo danh sách lịch sử cảnh báo mới nhất từ Backend về đồng bộ, kết hợp hoàn hảo giữa tốc độ của MQTT và tính nhất quán của REST API.
+    \item \textbf{Thẩm mỹ và trải nghiệm người dùng (UI/UX):} Thiết kế sử dụng \texttt{Tailwind CSS} và thư viện \texttt{Shadcn UI}, mang lại một giao diện hiện đại, trực quan, hỗ trợ thiết kế đáp ứng (Responsive) xuất sắc trên cả màn hình máy tính bảng và màn hình giám sát trung tâm.
 \end{itemize}
 
 \section{Kết quả đạt được và Kiểm thử}
