@@ -1,14 +1,127 @@
 \documentclass[../DoAn.tex]{subfiles}
 \begin{document}
 
-Chương này có độ dài tối thiểu 5 trang, tối đa không giới hạn.\footnote{Trong trường hợp phần này dưới 5 trang thì sinh viên nên gộp vào phần kết luận, không tách ra một chương riêng rẽ nữa.} Sinh viên cần trình bày tất cả những nội dung đóng góp mà mình thấy tâm đắc nhất trong suốt quá trình làm ĐATN. Đó có thể là một loạt các vấn đề khó khăn mà sinh viên đã từng bước giải quyết được, là giải thuật cho một bài toán cụ thể, là giải pháp tổng quát cho một lớp bài toán, hoặc là mô hình/kiến trúc hữu hiệu nào đó được sinh viên thiết kế.
 
-Chương này \textbf{là cơ sở quan trọng} để các thầy cô đánh giá sinh viên. Vì vậy, sinh viên cần phát huy tính sáng tạo, khả năng phân tích, phản biện, lập luận, tổng quát hóa vấn đề và tập trung viết cho thật tốt.
-Mỗi giải pháp hoặc đóng góp của sinh viên cần được trình bày trong một mục độc lập bao gồm ba mục con: (i) dẫn dắt/giới thiệu về bài toán/vấn đề, (ii) giải pháp, và (iii) kết quả đạt được (nếu có).
+\section{Chiến Lược Thiết Kế Nhãn Phân Loại Nhằm Giảm Thiểu Cảnh Báo Sai}
 
-Sinh viên lưu ý \textbf{không trình bày lặp lại nội dung}. Những nội dung đã trình bày chi tiết trong các chương trước không được trình bày lại trong chương này. Vì vậy, với nội dung hay, mang tính đóng góp/giải pháp, sinh viên chỉ nên tóm lược/mô tả sơ bộ trong các chương trước, đồng thời tạo tham chiếu chéo tới đề mục tương ứng trong Chương 5 này. Chi tiết thông tin về đóng góp/giải pháp được trình bày trong mục đó.
+\subsection{Bài toán}
 
-Ví dụ, trong Chương 4, sinh viên có thiết kế được kiến trúc đáng lưu ý gì đó, là sự kết hợp của các kiến trúc MVC, MVP, SOA, v.v. Khi đó, sinh viên sẽ chỉ mô tả ngắn gọn kiến trúc đó ở Chương 4, rồi thêm các câu có dạng: ``Chi tiết về kiến trúc này sẽ được trình bày trong phần 5.1". 
+Trong giai đoạn phát triển đầu tiên (v1--v12), hệ thống sử dụng sơ đồ phân loại bốn nhãn gồm \textit{Walk}, \textit{Run}, \textit{Static/ADL} và \textit{Fall}. Nhãn \textit{Static/ADL} được thiết kế để gộp tất cả các hoạt động còn lại không thuộc di chuyển hay té ngã, bao gồm đứng yên, ngồi, nằm, cúi người và chuyển đổi tư thế. Tuy nhiên, trong quá trình kiểm thử thực tế, hệ thống liên tục phát sinh cảnh báo sai (False Positive) khi người dùng thực hiện các thao tác chuyển tư thế thông thường như ngồi xuống, đứng dậy hay nằm xuống từ tư thế ngồi.
 
+Phân tích tín hiệu cho thấy nguyên nhân cốt lõi: các hành động chuyển tư thế này tạo ra xung gia tốc tức thời có biên độ và hình thái (morphology) rất tương đồng với xung gia tốc của cú ngã thực sự. Khi bị gộp vào nhãn \textit{Static/ADL} --- vốn được mô hình kỳ vọng là trạng thái yên tĩnh --- mô hình không có cơ sở để học ranh giới phân biệt rõ ràng giữa chuyển động đột ngột có chủ ý và té ngã ngoài ý muốn, dẫn đến xác suất dự đoán nhãn \textit{Fall} cao một cách bất thường khi gặp các mẫu chuyển tư thế.
+
+\subsection{Giải pháp}
+
+Giải pháp được đề xuất là bổ sung một nhãn chuyên biệt \textit{Trans} (Transition --- Chuyển tiếp) để tách biệt hoàn toàn các hành vi chuyển đổi tư thế ra khỏi cả nhóm trạng thái tĩnh lẫn nhóm té ngã. Với sơ đồ năm nhãn mới gồm \textit{Walk}, \textit{Run}, \textit{Idle}, \textit{Trans} và \textit{Fall}, mô hình được cung cấp đủ bối cảnh ngữ nghĩa để học được ranh giới quyết định riêng biệt cho mỗi loại động học. Cụ thể, nhãn \textit{Idle} chỉ chứa các trạng thái thực sự tĩnh (đứng yên, ngồi, nằm), trong khi nhãn \textit{Trans} gộp tất cả các thao tác chuyển đổi tư thế từ bộ dữ liệu SisFall. Bảng \ref{tab:label_mapping} trình bày chi tiết ánh xạ nhãn, trong đó đáng chú ý là nhãn \textit{Idle} và \textit{Trans} cùng được trích xuất từ một nhóm mã hoạt động D07--D16: phương pháp phát hiện đỉnh (peak detection) trên tổng véc-tơ gia tốc (SVM) được áp dụng để phân tách --- 3 cửa sổ quanh đỉnh SVM được gán nhãn \textit{Trans}, còn các đoạn tĩnh xa đỉnh (xác định theo hướng véc-tơ trọng lực) được gán nhãn \textit{Idle}.
+
+\begin{table}[H]
+\centering
+\caption{Ánh xạ nhãn phân loại và mã hoạt động SisFall}
+\label{tab:label_mapping}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Nhãn} & \textbf{Mã SisFall} & \textbf{Phương pháp xác định} \\
+\hline
+Walk  & D01, D02, D05, D06      & Đi bộ chậm/nhanh, leo/xuống cầu thang \\
+Run   & D03, D04                & Chạy bộ chậm/nhanh \\
+Idle  & D07--D16 (đoạn xa đỉnh) & Peak detection --- vùng tĩnh theo hướng trọng lực \\
+Trans & D07--D16 (quanh đỉnh)   & Peak detection --- 3 cửa sổ quanh đỉnh SVM \\
+Fall  & F01--F15                & Toàn bộ sự kiện ngã \\
+\hline
+\end{tabular}
+\end{table}
+
+Song song với việc bổ sung nhãn, một chiến lược đa lớp để xử lý mất cân bằng dữ liệu cũng được áp dụng. Trọng số lớp được tính toán tự động bằng phương pháp \texttt{class\_weight=`balanced'} của scikit-learn và được nhân thêm hệ số 3,0 cho nhãn Fall để bù đắp tỷ lệ mẫu thấp. Hàm mất mát sử dụng kỹ thuật làm mờ nhãn (Label Smoothing với $\varepsilon = 0{,}1$) nhằm giảm sự quá tự tin của mô hình vào một nhãn duy nhất, từ đó cải thiện khả năng hiệu chỉnh xác suất (calibration). Cuối cùng, ngưỡng quyết định cho nhãn Fall được hạ xuống $\theta = 0{,}25$ thay vì ngưỡng mặc định 0,5, phản ánh ưu tiên tối đa hóa Recall trong bối cảnh y tế khẩn cấp, nơi hậu quả của việc bỏ sót một cú ngã nghiêm trọng hơn nhiều so với một cảnh báo nhầm.
+
+\subsection{Kết quả}
+
+Việc chuyển từ sơ đồ bốn nhãn sang năm nhãn chứng minh hiệu quả rõ rệt trong việc giảm thiểu cảnh báo sai từ các hoạt động sinh hoạt hàng ngày, đặc biệt trong bài kiểm thử với kịch bản chuyển tư thế nhanh. Ngoài ra, sơ đồ phân loại năm lớp còn mang lại giá trị ứng dụng bổ sung: Backend có thể tổng hợp số liệu vận động hàng ngày từ các nhãn \textit{Walk}, \textit{Run} và \textit{Idle} để xây dựng báo cáo mức độ hoạt động thể chất (activity level) của người cao tuổi, mở rộng khả năng theo dõi sức khỏe của hệ thống vượt ra ngoài chức năng phát hiện té ngã đơn thuần.
+
+% -----------------------------------------------------------------------
+
+\section{Tiến Trình Tối Ưu Hóa Kiến Trúc Mô Hình Học Sâu Tương Thích TinyML}
+
+\subsection{Bài toán}
+
+Việc triển khai mạng nơ-ron học sâu trên vi điều khiển (TinyML) đặt ra hai ràng buộc đối nghịch nhau. Một mặt, kiến trúc mô hình phải đủ biểu đạt để nắm bắt được các mẫu động học phức tạp trong chuỗi tín hiệu IMU sáu chiều với độ dài 200 mẫu. Mặt khác, mô hình phải vừa với tài nguyên cực kỳ hạn chế của ESP32-S3 và phải có thể lượng tử hóa (quantize) sang định dạng số nguyên 8-bit (INT8) hoặc dấu phẩy động 32-bit (Float32) để thực thi hiệu quả qua thư viện TensorFlow Lite Micro.
+
+Kiến trúc CNN-LSTM ban đầu (v1--v4) gặp vấn đề nghiêm trọng ở bước lượng tử hóa: các lớp LSTM chứa các phép tính phụ thuộc tuần tự (sequential recurrent computation) không được thư viện TensorFlow Lite Micro tối ưu tốt, dẫn đến thời gian suy luận cao và độ sai số lượng tử hóa đáng kể. Trong khi đó, tích chập 1D (Conv1D) được cả TFLite Micro và ESP-NN (thư viện tăng tốc phần cứng tích hợp trong ESP-IDF) hỗ trợ và tối ưu đặc biệt tốt cho kiến trúc ESP32.
+
+\subsection{Giải pháp}
+
+Quá trình tối ưu hóa kiến trúc diễn ra qua ba thế hệ chính, mỗi thế hệ giải quyết một nhóm vấn đề cụ thể còn tồn đọng từ thế hệ trước.
+
+Thế hệ đầu tiên là mô hình TCN (Temporal Convolutional Network --- phiên bản v8 đến v12), trong đó toàn bộ khối LSTM được thay thế bằng chồng tích chập có giãn nhân quả (dilated causal convolution). Cụ thể, kiến trúc TCN bao gồm hai chồng (stack), mỗi chồng có bốn lớp tích chập với hệ số giãn (dilation factor) tăng dần theo cấp số nhân $d \in \{1, 2, 4, 8\}$. Cấu hình này tạo ra trường tiếp nhận (receptive field) hiệu quả bao phủ 120 mẫu tương đương 1,2 giây tín hiệu, đủ để bao trọn pha động học của một cú ngã. Việc chuyển sang TCN giải quyết hoàn toàn vấn đề lượng tử hóa, cho phép xuất mô hình sang TFLite INT8 lần đầu thành công.
+
+Thế hệ thứ hai là mô hình 1D ResNet tối ưu hóa phần cứng (phiên bản v22 đến v25). Cải tiến chính so với TCN gồm ba điểm. Thứ nhất, kiến trúc ResNet sử dụng kết nối tắt phân cấp (hierarchical skip connection) riêng cho từng khối, cho phép gradient lan truyền ổn định hơn qua nhiều lớp so với kết nối tắt ngang hàng (lateral residual) của TCN. Thứ hai, toàn bộ Conv1D thông thường được thay thế bằng \texttt{SeparableConv1D} (tích chập phân tách theo chiều sâu --- depthwise separable convolution), khai thác khả năng tăng tốc 6,3 lần của thư viện ESP-NN cho phép tính depthwise. Thứ ba, hàm kích hoạt \texttt{relu6} thay cho \texttt{relu} giới hạn giá trị kích hoạt trong khoảng $[0, 6]$ để tránh tràn số khi lượng tử hóa INT8.
+
+Bên cạnh đó, hai cơ chế học đặc trưng bổ sung được tích hợp vào mỗi khối residual. Khối SE (Squeeze-and-Excitation) thực hiện cơ chế chú ý theo kênh (channel attention), cho phép mô hình tự động học cách phân bổ trọng số khác nhau cho từng trục cảm biến tùy theo pha chuyển động hiện tại. Đặc biệt, các lớp chiếu tuyến tính (projection) trong SE Block sử dụng \texttt{Conv1D} với kernel $1 \times 1$ thay vì lớp kết nối đầy đủ (Dense layer), nhằm tương thích tối ưu với ESP-NN vốn tăng tốc tích chập điểm (pointwise convolution) lên 14,2 lần. Cơ chế gộp kép (Dual Pooling) kết hợp đầu ra của Global Average Pooling và Global Max Pooling trước khi đưa vào lớp phân loại cuối, giúp mô hình đồng thời nắm bắt được đặc trưng phân bố trung bình của chuỗi tín hiệu lẫn đỉnh gia tốc cực đại --- vốn là đặc trưng phân biệt quan trọng nhất của cú ngã.
+
+\subsection{Kết quả}
+
+Bảng \ref{tab:v25_architecture} mô tả kiến trúc lớp đầy đủ của mô hình v25 với tổng cộng 19.253 tham số (18.453 có thể huấn luyện), nhỏ hơn đáng kể so với kiến trúc CNN-LSTM ban đầu nhờ SeparableConv1D và stride-based downsampling thay cho MaxPooling.
+
+\begin{table}[H]
+\centering
+\caption{Kiến trúc layer-by-layer của mô hình v25 (1D ResNet)}
+\label{tab:v25_architecture}
+\begin{tabular}{|l|l|c|}
+\hline
+\textbf{Khối} & \textbf{Thành phần} & \textbf{Output shape} \\
+\hline
+Đầu vào & --- & $(200, 6)$ \\
+Stem    & Conv1D(16, k=3, s=2) + BN + ReLU6               & $(100, 16)$ \\
+Block 1 & SepConv1D(16, k=3) $\times$2 + SE + Residual    & $(100, 16)$ \\
+Block 2 & SepConv1D(32, k=3, s=2) $\times$2 + SE + Residual & $(50, 32)$ \\
+Block 3 & SepConv1D(32, k=3) $\times$2 + SE + Residual    & $(50, 32)$ \\
+Block 4 & SepConv1D(64, k=3, s=2) $\times$2 + SE + Residual & $(25, 64)$ \\
+Head    & GAP + GMP $\rightarrow$ Concat $\rightarrow$ Dropout(0,3) $\rightarrow$ Dense(5) & $(5,)$ \\
+\hline
+\multicolumn{2}{|l|}{Tổng tham số (trainable)} & 19.253 (18.453) \\
+\hline
+\end{tabular}
+\end{table}
+
+Bảng \ref{tab:espnn_speedup} tổng hợp hệ số tăng tốc của các kỹ thuật tối ưu hóa phần cứng được tích hợp trong kiến trúc v25 khi chạy trên ESP32-S3 với thư viện ESP-NN.
+
+\begin{table}[H]
+\centering
+\caption{Hệ số tăng tốc của các kỹ thuật tối ưu hóa ESP-NN trong kiến trúc v25}
+\label{tab:espnn_speedup}
+\begin{tabular}{|l|c|}
+\hline
+\textbf{Kỹ thuật tối ưu hóa} & \textbf{Tăng tốc (ESP-NN)} \\
+\hline
+SeparableConv1D (depthwise)     & 6,3$\times$ \\
+Pointwise Conv $1 \times 1$     & 14,2$\times$ \\
+Hàm kích hoạt relu6             & 11,5$\times$ \\
+Lượng tử hóa INT8 (toàn bộ)    & $\sim$4$\times$ (bộ nhớ), $\sim$2$\times$ (tốc độ) \\
+\hline
+\end{tabular}
+\end{table}
+
+Kết quả thực đo trên phần cứng cho thấy thời gian suy luận của mô hình v25 đạt trung bình \textbf{70,23~ms} cho một cửa sổ đầu vào $200 \times 6$, chiếm khoảng 14\% chu kỳ cập nhật 500~ms của cơ chế cửa sổ trượt, đảm bảo tính thời gian thực cho hệ thống phát hiện té ngã. Trên 1.200 mẫu kiểm thử thực tế trên phần cứng, mô hình đạt độ chính xác 90,33\% và Fall Recall \textbf{99,00\%}, với khoảng cách desktop--firmware chỉ 0,68\%, xác nhận pipeline lượng tử hóa INT8 ổn định. Kết quả so sánh đầy đủ giữa các phiên bản được trình bày trong Bảng \ref{tab:model_comparison} tại mục 4.3.1.
+
+% -----------------------------------------------------------------------
+
+\section{Phương Pháp Lấy Mẫu IMU Chính Xác Sử Dụng Ngắt Phần Cứng PCNT}
+
+\subsection{Bài toán}
+
+Độ chính xác của cơ chế cửa sổ trượt 200 mẫu tại tần số 100~Hz phụ thuộc trực tiếp vào tính đều đặn của khoảng cách giữa các lần lấy mẫu. Nếu tần số lấy mẫu thực tế dao động, phổ tần số của tín hiệu IMU sẽ bị dịch chuyển, gây ra sai lệch giữa phân bố đặc trưng của dữ liệu trong môi trường suy luận thực tế so với dữ liệu đã dùng để huấn luyện mô hình.
+
+Trong giai đoạn đầu, \texttt{svc\_imu} sử dụng hàm \texttt{vTaskDelay} của FreeRTOS để tạo chu kỳ lấy mẫu 10~ms. Tuy nhiên, trình lập lịch tác vụ (scheduler) của FreeRTOS hoạt động dựa trên tick timer phần mềm với độ phân giải mặc định 1~ms (1000 tick/giây). Khi hệ thống đang xử lý ngắt từ module 4G LTE (A7680C) hoặc thực hiện suy luận AI trong \texttt{svc\_ai}, tick timer bị trì hoãn, gây ra jitter tích lũy trong chuỗi lấy mẫu và làm lệch tần số lấy mẫu thực tế khỏi mục tiêu 100~Hz.
+
+\subsection{Giải pháp}
+
+Giải pháp được triển khai là sử dụng ngoại vi \textbf{PCNT} (Pulse Counter --- Bộ đếm xung) của ESP32-S3 như một nguồn ngắt phần cứng hoàn toàn độc lập với CPU và FreeRTOS scheduler. Một bộ định thời phần cứng (hardware timer) được cấu hình phát ra xung vuông tần số 100~Hz vào chân GPIO được kết nối với kênh PCNT. Mỗi khi PCNT đếm đủ một xung, Interrupt Service Routine (ISR) được kích hoạt trực tiếp từ phần cứng, không phụ thuộc vào trạng thái của hệ điều hành. ISR này ghi nhận thời điểm lấy mẫu và đưa dữ liệu IMU vào hàng đợi vòng (ring buffer) của \texttt{svc\_imu} thông qua cơ chế thông báo tác vụ (task notification) từ ISR.
+
+Kiến trúc PCNT-driven sẽ loại bỏ hoàn toàn sự phụ thuộc của tần số lấy mẫu vào mức tải CPU, đảm bảo jitter dưới 1~$\mu$s so với jitter có thể lên tới vài mili giây khi sử dụng \texttt{vTaskDelay}. Ngoài ra, kiến trúc ngắt phần cứng này còn tạo ra tiền đề quan trọng cho một cải tiến hiệu suất năng lượng: trong khoảng 10~ms giữa hai ngắt PCNT liên tiếp, CPU có thể được đặt vào trạng thái Automatic Light Sleep của FreeRTOS (Tickless Idle). Khi ở trạng thái này, xung nhịp CPU giảm từ 240~MHz xuống còn xung nhịp tinh thể XTAL 40~MHz, ước tính tiết kiệm 30--50\% điện năng so với chế độ chạy liên tục. Điều kiện tiên quyết để kích hoạt tính năng này là cấu hình lại nguồn xung nhịp của ngoại vi I2C và PCNT sang nguồn RTC clock để các ngoại vi này duy trì hoạt động trong khi CPU ở trạng thái ngủ.
+
+\subsection{Kết quả và Định hướng phát triển}
+
+Kiến trúc PCNT-driven đã được thiết kế và đặc tả đầy đủ trong \texttt{svc\_imu} như bước tối ưu phần cứng tiếp theo của dự án. Ở giai đoạn đánh giá hiện tại, quá trình kiểm thử firmware sử dụng một bản firmware thử nghiệm riêng: máy tính gửi từng cửa sổ dữ liệu IMU ($200 \times 6$) đã được tiền xử lý qua UART, MCU thực hiện suy luận và trả nhãn kết quả --- do đó kết quả inference không phụ thuộc vào độ chính xác tần số lấy mẫu trong vòng đo này.
+
+Tính năng Automatic Light Sleep đang trong giai đoạn phát triển tiếp theo. Sau khi hoàn tất tích hợp, hệ thống dự kiến đạt mức tiêu thụ điện trung bình thấp hơn đáng kể, kéo dài thời gian sử dụng pin và nâng cao tính khả dụng của thiết bị đeo trong môi trường viện dưỡng lão, nơi việc sạc pin thường xuyên gây bất tiện cho cả người cao tuổi lẫn nhân viên y tế.
 
 \end{document}

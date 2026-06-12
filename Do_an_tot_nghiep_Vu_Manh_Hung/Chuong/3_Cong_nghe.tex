@@ -137,6 +137,14 @@ FreeRTOS đóng vai trò là "nhạc trưởng" điều phối toàn bộ hoạt
 %     \label{fig:tinyml_pipeline}
 % \end{figure}
 
+\subsection{Bộ lọc Kalman 1D cho Dung hợp Cảm biến (Sensor Fusion)}
+
+Trong bài toán ước lượng góc nghiêng (Roll, Pitch) của thiết bị đeo từ tín hiệu IMU, mỗi loại cảm biến đều mang một điểm mạnh và điểm yếu đối nghịch nhau. Gia tốc kế cho phép tính toán góc tĩnh rất chính xác dựa trên hướng của véc-tơ trọng lực, nhưng lại cực kỳ nhạy cảm với nhiễu tần số cao (high-frequency noise) khi thiết bị va đập mạnh hoặc chuyển động đột ngột --- đúng là đặc trưng của cú ngã. Ngược lại, con quay hồi chuyển (gyroscope) phản ứng tức thời và mượt mà với mọi chuyển động, nhưng khi ước lượng góc bằng cách tích phân vận tốc góc theo thời gian, sai số nhỏ của mỗi chu kỳ lấy mẫu sẽ tích lũy thành sai số trôi (drift) không thể tự hiệu chỉnh được.
+
+Bộ lọc Kalman 1 chiều (1D Kalman Filter) giải quyết mâu thuẫn này bằng cách kết hợp linh hoạt đầu ra của cả hai cảm biến theo một trọng số tối ưu được cập nhật động theo từng chu kỳ. Thuật toán hoạt động qua hai bước tuần hoàn: bước \textit{Dự báo (Predict)} sử dụng vận tốc góc từ gyroscope để ước lượng góc nghiêng tại thời điểm hiện tại và tính toán sai số dự báo tích lũy; bước \textit{Cập nhật (Update)} sử dụng góc tĩnh tính từ gia tốc kế như một phép đo tham chiếu để hiệu chỉnh lại kết quả dự báo thông qua hệ số Kalman Gain. Tham số phương sai nhiễu đo lường của gia tốc kế (\texttt{R\_measure}) đóng vai trò điều chỉnh mức độ tin tưởng vào phép đo gia tốc: giá trị cao hơn sẽ làm bộ lọc ít bị dao động khi gia tốc nhiễu (như lúc va chạm), trong khi giá trị thấp hơn giúp hội tụ nhanh hơn khi cơ thể ở trạng thái tĩnh.
+
+Trong hệ thống này, thư viện \texttt{lib\_kalman} được gọi trực tiếp trong \texttt{svc\_imu} tại mỗi chu kỳ lấy mẫu 100~Hz. Góc Roll và Pitch đã được làm mượt bởi bộ lọc được đưa vào cùng với dữ liệu gia tốc thô và vận tốc góc thô để tạo thành véc-tơ đặc trưng 6 chiều đầu vào cho mô hình TinyML. Điều này giúp loại bỏ phần lớn nhiễu ngắn hạn không mang thông tin hành vi, đồng thời cung cấp cho mô hình một biểu diễn tư thế ổn định hơn, từ đó giảm thiểu đáng kể tỷ lệ cảnh báo sai trong sinh hoạt hàng ngày.
+
 \section{Hệ quản trị Cơ sở dữ liệu}
 \label{section:3.5}
 

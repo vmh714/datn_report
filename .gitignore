@@ -27,3 +27,5 @@ venv/
 *.pdf
 # Bỏ qua thư mục rác do LaTeX Workshop tạo (nếu có)
 .vscode/
+.agents/
+.gitignore

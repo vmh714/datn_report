@@ -76,6 +76,65 @@ Giao diện người dùng (Frontend) được thiết kế chuyên biệt để
 \end{itemize}
 
 \section{Kết quả đạt được và Kiểm thử}
-\textit{(Các phần về kết quả kiểm thử, giao diện ứng dụng, hiệu năng hệ thống sẽ được bổ sung sau khi dự án hoàn thiện việc thu thập dữ liệu và tích hợp hệ thống thực tế.)}
+
+\subsection{Đánh giá hiệu năng mô hình phân loại}
+
+Nhằm đảm bảo kết quả đánh giá phản ánh trung thực khả năng tổng quát hóa của mô hình trên dữ liệu chưa gặp trong quá trình huấn luyện, toàn bộ quy trình thực nghiệm áp dụng phương pháp phân chia theo đối tượng (Leave-Subjects-Out --- LSO). Toàn bộ 38 đối tượng của bộ dữ liệu SisFall được phân chia cố định thành ba tập không giao nhau: tập huấn luyện gồm SA01--SA18 và SE01--SE08, tập kiểm định gồm SA19--SA21 và SE09--SE11, và tập kiểm tra độc lập gồm SA22--SA23 và SE12--SE15. Cách phân chia này loại trừ khả năng mô hình ghi nhớ đặc điểm sinh lý riêng của từng cá nhân thay vì học được biểu diễn đặc trưng hành vi tổng quát, từ đó phản ánh đúng khả năng vận hành thực tế trên những người dùng mới.
+
+Các chỉ số đánh giá bao gồm độ chính xác tổng thể (Accuracy), điểm F1 trên nhãn Fall (F1-Fall) và điểm F1 trung bình không trọng số trên cả năm nhãn (Macro-F1). Trong bối cảnh ứng dụng y tế khẩn cấp, độ nhạy (Recall) của nhãn Fall được ưu tiên cao hơn độ đặc hiệu (Precision), vì một cú ngã bị bỏ sót gây hậu quả nghiêm trọng hơn so với một cảnh báo sai. Bảng \ref{tab:model_comparison} tổng hợp kết quả so sánh giữa các phiên bản kiến trúc chính trên tập kiểm tra độc lập.
+
+\begin{table}[H]
+\centering
+\caption{So sánh hiệu năng các phiên bản mô hình trên tập kiểm tra (LSO, 9.135 mẫu)}
+\label{tab:model_comparison}
+\begin{tabular}{|c|l|c|c|c|c|c|}
+\hline
+\textbf{Ver.} & \textbf{Kiến trúc} & \textbf{\#Nhãn} & \textbf{Acc.\ (\%)} & \textbf{F1-Fall} & \textbf{F1-Trans} & \textbf{Macro-F1} \\
+\hline
+v1      & CNN-LSTM baseline               & 4 & 91,57 & 0,9755 & ---    & 0,9294 \\
+v4      & TCN (tốt nhất 4 nhãn)           & 4 & 92,41 & 0,9774 & ---    & 0,9353 \\
+v8      & TCN dilated causal              & 4 & 91,34 & 0,9667 & ---    & 0,9303 \\
+v18     & TCN chuyển sang 5 nhãn          & 5 & 89,89 & 0,9759 & 0,7820 & 0,9092 \\
+v22     & TCN + SE + Dual Pooling         & 5 & 91,56 & 0,9786 & \textbf{0,8554} & 0,9267 \\
+v23     & TCN + ngưỡng Fall tối ưu        & 5 & 91,33 & \textbf{0,9832} & 0,8444 & 0,9273 \\
+v25     & ResNet-1D + SeparableConv       & 5 & 91,01 & 0,9784 & 0,8365 & 0,9238 \\
+v26\_v3 & ResNet-1D + Focal Loss          & 5 & 88,54 & 0,9514 & 0,8041 & 0,8964 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Đánh giá hiệu năng suy luận trên vi điều khiển}
+
+Sau khi hoàn tất huấn luyện, mô hình v25 được xuất sang định dạng TensorFlow Lite và lượng tử hóa sang INT8, sau đó biên dịch thành mảng mã nguồn C/C++ (\texttt{model\_data.cc}) để nhúng trực tiếp vào bộ nhớ Flash của ESP32-S3. Trên nền tảng Seeed Studio XIAO ESP32S3 với bộ xử lý Xtensa LX7 chạy ở 240~MHz, thời gian suy luận phụ thuộc vào cấu hình giao diện Flash. Khi sử dụng Quad SPI ở 40~MHz, thời gian đo được trung bình \textbf{70,23~ms} (min 70,07~ms / max 70,32~ms). Khi nâng cấp lên Octal SPI ở 80~MHz, thời gian rút xuống còn khoảng \textbf{32~ms} nhờ băng thông đọc model weight từ Flash cao hơn. Trong cả hai trường hợp, thời gian suy luận đều thấp hơn đáng kể so với chu kỳ cập nhật cửa sổ trượt 500~ms (stride 50 mẫu ở 100~Hz), đảm bảo \texttt{svc\_ai} hoàn tất xử lý trước khi cửa sổ tiếp theo được điền đầy mà không gây hiện tượng trệ hàng đợi (queue backpressure).
+
+\begin{table}[H]
+\centering
+\caption{Tổng hợp tài nguyên phần cứng cho mô hình v25 trên ESP32-S3}
+\label{tab:mcu_perf}
+\begin{tabular}{|l|c|}
+\hline
+\textbf{Chỉ số} & \textbf{Giá trị} \\
+\hline
+Thời gian suy luận (Quad SPI, 40 MHz) & 70,23 ms (min 70,07 / max 70,32) \\
+Thời gian suy luận (Octal SPI, 80 MHz) & $\approx$ 32 ms \\
+Chu kỳ cập nhật kết quả (stride)      & 500 ms \\
+Kích thước mô hình TFLite (INT8)      & $\approx$ 205 kB (210.192 bytes) \\
+Tensor arena cấu hình (PSRAM)         & 100 kB \\
+Tensor arena thực dùng                & 28,2 kB (28.844 bytes) \\
+\hline
+Độ chính xác trên firmware (1.200 mẫu) & 90,33\% \\
+Fall Recall trên firmware              & 99,00\% \\
+Gap desktop $\rightarrow$ firmware     & 0,68\% \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Kiểm thử tích hợp hệ thống đầu cuối}
+
+Kiểm thử tích hợp được thực hiện theo hai nhóm kịch bản đối lập nhau. Nhóm thứ nhất bao gồm các kịch bản hoạt động sinh hoạt bình thường như đi bộ, ngồi và đứng dậy, nhằm xác nhận hệ thống không phát sinh cảnh báo sai trong điều kiện sử dụng hàng ngày. Nhóm thứ hai bao gồm các kịch bản té ngã giả lập, nhằm xác minh toàn bộ chuỗi sự kiện từ cảm biến đến giao diện người dùng được kích hoạt chính xác và kịp thời.
+
+Trong một kịch bản té ngã điển hình, chuỗi sự kiện lần lượt diễn ra như sau: (i)~cảm biến MPU6050 thu nhận xung gia tốc đặc trưng của cú ngã; (ii)~\texttt{svc\_ai} xác nhận nhãn Fall khi xác suất đầu ra vượt ngưỡng $P(\text{Fall}) \geq 0{,}25$; (iii)~\texttt{sys\_manager} kích hoạt \texttt{svc\_cloud} thông qua \texttt{esp\_event}; (iv)~gói tin cảnh báo được gửi lên MQTT Broker với mức đảm bảo QoS~1; (v)~Backend lưu sự kiện vào PostgreSQL và phát tín hiệu làm mới bộ nhớ đệm; (vi)~giao diện Dashboard hiển thị cảnh báo khẩn cấp kèm âm thanh. Tổng độ trễ đầu cuối (end-to-end latency) từ thời điểm ngã đến khi cảnh báo xuất hiện trên Dashboard dưới điều kiện mạng 4G ổn định nhỏ hơn 1 giây.
+
+Cơ chế làm lạnh (\textit{cooldown}) 10--20 giây sau mỗi cảnh báo được xác nhận hoạt động đúng, ngăn chặn hiện tượng gửi cảnh báo lặp lại do cùng một sự kiện ngã kích hoạt nhiều cửa sổ phân loại liên tiếp.
 
 \end{document}
