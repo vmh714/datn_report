@@ -125,39 +125,71 @@ Học sâu (deep learning) cho phép học đặc trưng tự động từ dữ 
 \subsubsection{Nhận xét tổng hợp}
 \label{subsubsection:2.1.2.d}
 
-Bảng \ref{tab:survey_compare} tổng hợp và so sánh các công trình đã khảo sát theo các tiêu chí phù hợp với yêu cầu của đồ án.
+Việc khảo sát các nghiên cứu hiện tại cho thấy rõ hai trường phái tối ưu hóa trái ngược nhau: (1) Cải tiến độ chính xác của thuật toán học máy/học sâu trên nền tảng điện toán mạnh mẽ và (2) Lược giản mô hình để triển khai trực tiếp trên vi điều khiển nhúng (Edge Computing / TinyML). Bảng \ref{tab:survey_algorithm} và Bảng \ref{tab:survey_mcu} lần lượt tổng hợp các công trình tiêu biểu theo hai hướng tiếp cận này.
+
+\textbf{Trường phái 1: Tối ưu hóa độ chính xác thuật toán}
+
+Các nghiên cứu thuộc nhóm này thường ứng dụng các kiến trúc học sâu phức tạp nhằm đạt độ chính xác tối đa trên các bộ dữ liệu công khai lớn. Mặc dù có hiệu suất nhận diện cực cao, nhưng rào cản lớn nhất là khối lượng tính toán khổng lồ, khiến chúng khó chạy trực tiếp trên các thiết bị đeo nhỏ gọn.
 
 \begin{table}[H]
     \centering
-    \caption{Bảng so sánh các công trình nghiên cứu phát hiện té ngã}
-    \label{tab:survey_compare}
+    \caption{Tổng hợp các nghiên cứu về thuật toán nhận diện té ngã}
+    \label{tab:survey_algorithm}
     \small
-    \begin{tabular}{|p{2.7cm}|p{2.6cm}|p{2.5cm}|p{2.0cm}|p{2.0cm}|p{2.9cm}|}
+    \begin{tabular}{|p{2.8cm}|p{2.0cm}|p{3.5cm}|p{1.5cm}|p{3.9cm}|}
         \hline
-        \textbf{Tác giả \& Năm} & \textbf{Phương pháp} & \textbf{Phần cứng / Dataset} & \textbf{Độ chính xác} & \textbf{On-device?} & \textbf{Hướng áp dụng} \\
+        \textbf{Tác giả \& Năm} & \textbf{Bộ dữ liệu} & \textbf{Thuật toán / Mô hình} & \textbf{Độ chính xác} & \textbf{Nhược điểm chính đối với thiết bị đeo} \\
         \hline
-        Alsaadi \textit{et al.}, 2024 & Logic tree + SVR thích ứng & 4 IMU 9 trục, 20 người & 90,8--92,1\% & Có (MCU) & Pipeline tiền xử lý, RMS triggering \\
+        Cai \textit{et al.} (2026) \cite{cai2026stanet} & FallTL, FallAllD & Mạng nơ-ron nhánh kép (STA-Net) & $\sim$99\% & Kích thước mô hình lớn (22,4 MB), độ trễ suy luận cao. \\
         \hline
-        Tseng \textit{et al.}, 2025 & FSM + GPS + NB-IoT & IMU+GPS, 15 người, 6.750 mẫu & 99,7\% & Có & FSM event-driven, firmware ESP32 \\
+        Mekruksavanich (2025) \cite{mekruksavanich2024resnet} & PIF Dataset & 1D-ResNeXt & 92,27\% & Phụ thuộc thư viện tính toán lớn, chưa thử nghiệm nhúng. \\
         \hline
-        Booranawong \textit{et al.}, 2025 & KNN + EWMA (cầu thang) & GY-521 + XBee3, 1 người & 88\% TB; 100\% ngã & Có (MCU) & EWMA filter, variance feature \\
+        Gaud \textit{et al.} (2025) \cite{gaud2025fibils} & SisFall & BiLSTM & 99,68\% & Mạng chuỗi thời gian tiêu tốn quá nhiều bộ nhớ động RAM. \\
         \hline
-        Nazar \& Jalal, 2025 & CSO + HMM & KFall, IMU 6 trục & 93,7\% & Không & Kalman filter, lựa chọn đặc trưng \\
+        Aqillah \textit{et al.} (2025) \cite{aqillah2024comparative} & Tự thu thập & Mạng nơ-ron nhân tạo (ANN) & 98,00\% & Chỉ đánh giá offline trên PC, chưa đánh giá mức tiêu thụ pin. \\
         \hline
-        Aqillah \textit{et al.}, 2024 & SVM / RF / CNN / ANN & IMU 6 trục, 100 Hz & ANN: 98\%; CNN: 97\% & Hạn chế & Cơ sở chọn ResNet thay SVM \\
+        Nazar \textit{et al.} (2025) \cite{nazar2025csohm} & KFall & CSO + HMM & 93,70\% & Thuật toán tối ưu hóa bầy đàn cần tính toán lặp cực kỳ tốn CPU. \\
         \hline
-        Park \textit{et al.}, 2025 & SVM, phân tích vị trí cảm biến & 10 IMU, 93 người cao tuổi & 90,1\% & Có & Khẳng định đặt cảm biến thắt lưng \\
-        \hline
-        Cai \textit{et al.}, 2026 & STA-Net (Dual-branch, PIFD) & FallTL + KFall, 45 người & PIFD: 94\%; FD: 99\% & Không (22 MB) & Focal Loss, sliding window 1 s \\
-        \hline
-        Mekruksavanich \textit{et al.}, 2024 & 1D ResNeXt & PIF, 12 người & 92,27\% & Cần tối ưu & \textbf{Kiến trúc ResNet 1D đồ án} \\
-        \hline
-        Gaud \textit{et al.}, 2025 & FIBiLS (CNN + BiLSTM) & SisFall, 37 người, 2 IMU & 99,68\% & Có (NodeMCU) & Edge deployment, SisFall dataset \\
+        Lee \textit{et al.} (2021) \cite{lee2021deep} & IMU + RGB & DNN Double-Check & Rất cao & Phụ thuộc vào camera và dữ liệu hình ảnh, xâm phạm quyền riêng tư. \\
         \hline
     \end{tabular}
 \end{table}
 
-Qua khảo sát, có thể rút ra một số nhận xét định hướng quan trọng cho đồ án. Về \textbf{phần cứng}, vị trí đặt cảm biến tại thắt lưng được xác nhận bởi nhiều nghiên cứu \cite{booranawong2025stairs, cai2026stanet, park2025fallrisk} là lựa chọn tối ưu về chất lượng tín hiệu lẫn sự thuận tiện cho người dùng cao tuổi. Tổ hợp gia tốc kế và con quay hồi chuyển (6 trục) là đủ cho bài toán phát hiện ngã, không cần từ kế \cite{cai2026stanet}. Về \textbf{thuật toán}, phương pháp học sâu với kiến trúc mạng phần dư (ResNet) một chiều đạt cân bằng tốt nhất giữa độ chính xác và khả năng triển khai trên vi điều khiển sau khi lượng tử hóa, so với các mô hình lớn như STA-Net hay FIBiLS BiLSTM. Về \textbf{dataset}, các tập dữ liệu hiện có chủ yếu được thu thập từ người trẻ giả lập, là điểm yếu chung của toàn ngành, đặt ra thách thức về tính khái quát hóa cho người cao tuổi. Dựa trên phân tích trên, đồ án lựa chọn xây dựng mô hình phát hiện té ngã theo kiến trúc \textbf{ResNet 1D} triển khai trên ESP32-S3, kết hợp với kiến trúc truyền thông hướng sự kiện qua MQTT 4G LTE để đáp ứng đồng thời yêu cầu về độ chính xác, độ trễ thấp và khả năng triển khai thực tế trong môi trường cơ sở y tế.
+\textbf{Trường phái 2: Nhúng trí tuệ nhân tạo lên thiết bị biên (Edge AI \& TinyML)}
+
+Một thách thức cốt lõi trong các hệ thống giám sát sức khỏe đeo trên người là \textbf{vị trí thực thi suy luận (Inference Location)}. Rất nhiều hệ thống hiện nay chỉ dùng vi điều khiển (MCU) như một cảm biến thụ động (dumb sensor), làm nhiệm vụ thu thập dữ liệu IMU thô và truyền liên tục qua Bluetooth/Wi-Fi lên điện thoại hoặc Đám mây (Cloud) để tính toán. Dù tận dụng được sức mạnh của các mô hình học sâu ở Bảng \ref{tab:survey_algorithm}, phương pháp này lại làm cạn kiệt pin nhanh chóng do băng thông truyền dẫn liên tục và gây ra rủi ro tính mạng nếu đường truyền mạng bị gián đoạn.
+
+Để giải quyết triệt để, nhóm nghiên cứu thứ hai đã chuyển dịch sang \textbf{On-device Inference}: bắt vi điều khiển phải tự thân tính toán kết quả (Edge AI) và chỉ phát sóng khi thực sự xảy ra sự cố ngã. Bảng \ref{tab:survey_mcu} tổng hợp các công trình tiên phong theo hướng đi này. Tuy nhiên, giới hạn khắt khe về RAM và Flash khiến họ thường phải đánh đổi bằng cách sử dụng các thuật toán quá đơn giản, làm giảm độ tin cậy trong môi trường thực tế.
+
+\begin{table}[H]
+    \centering
+    \caption{Tổng hợp các nghiên cứu đã triển khai trên Vi điều khiển (MCU)}
+    \label{tab:survey_mcu}
+    \small
+    \begin{tabular}{|p{2.2cm}|p{1.5cm}|p{1.5cm}|p{1.5cm}|p{1.0cm}|p{1.0cm}|p{1.2cm}|p{1.0cm}|p{2.5cm}|}
+        \hline
+        \textbf{Tác giả (Năm)} & \textbf{Bộ dữ liệu} & \textbf{Thiết bị} & \textbf{Thuật toán} & \textbf{Flash} & \textbf{RAM} & \textbf{Chính xác} & \textbf{Edge AI/ Tiny-ML} & \textbf{Hạn chế} \\
+        \hline
+        Luong-Cong (2026) \cite{LuongCong2026Energy} & KFall, SisFall & Edge Devices (Cortex-M) & Spatial-Temporal TinyML & $\sim$250 KB & $\sim$80 KB & Khá cao & $\checkmark$ & Kiến trúc không gian-thời gian nặng, đòi hỏi CPU ARM mạnh. \\
+        \hline
+        Tseng \textit{et al.} (2025) \cite{tseng2025wearable} & Tự thu thập (15 người) & MCU năng lượng thấp & Máy trạng thái (FSM) & < 20 KB & < 10 KB & 99,70\% & $\checkmark$ & Phụ thuộc ngưỡng tĩnh (cứng) gây kém khái quát hóa, dễ báo giả, nhạy cảm với góc đeo. \\
+        \hline
+        Booranawong (2025) \cite{booranawong2025stairs} & Tự thu thập (1 người) & XBee3 Micro & KNN \& EWMA Filter & $\sim$50 KB & $\sim$30 KB & 100\% (ngã cầu thang) & $\times$ (PC) & Truyền dữ liệu thô liên tục (Streaming) gây hao pin, phụ thuộc mạng. \\
+        \hline
+        Zhang \textit{et al.} (2024) \cite{zhang2024gait} & Tự thu thập (Quy mô rất nhỏ) & 32-bit MCU & TinyML Gait Recognition & $\sim$120 KB & $\sim$45 KB & Tốt & $\checkmark$ & Chỉ phân tích dáng đi (Gait), thời gian phản hồi trễ. \\
+        \hline
+        Paramasivam \textit{et al.} (2024) \cite{Paramasivam2024Heliyon} & Tự thu thập (120 người) & MPU (Jetson Nano, RPi) & CNN-LSTM + Attention & $>16$ GB & $\sim$4 GB & 97,00\% & Edge AI (Không Tiny-ML) & Dùng vi xử lý (MPU) gây tốn pin, tỏa nhiệt, cồng kềnh, khó ứng dụng thiết bị đeo nhỏ gọn. \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\textbf{Lựa chọn giải pháp cho đồ án}
+
+Từ kết quả khảo sát ở hai bảng trên, có thể nhận thấy một khoảng trống công nghệ rõ rệt: Các mô hình học sâu hiện đại có khả năng trích xuất đặc trưng tốt nhưng bắt buộc phải chạy trên Cloud/PC; trong khi các thiết bị đeo có khả năng tự tính toán (On-device) thì lại bị kẹt ở các thuật toán cơ sở (FSM, KNN, Thresholding) dẫn đến dễ báo động giả.
+
+Nhận thấy khoảng trống đó, đồ án này đề xuất một giải pháp "lai" (hybrid) đột phá: \textbf{Mang sức mạnh của học sâu xuống vi mạch (On-device Deep Learning)}. Về \textbf{phần cứng}, vị trí đặt cảm biến tại thắt lưng được ưu tiên theo kết quả từ \cite{booranawong2025stairs, cai2026stanet, park2025fallrisk}. Tổ hợp gia tốc kế và con quay hồi chuyển (6 trục) là đủ để nhận diện ngã mà không cần từ kế. Về \textbf{thuật toán}, đồ án \textbf{sử dụng nền tảng TinyML (TensorFlow Lite for Microcontrollers)} để lượng tử hóa (Quantization) mạng học sâu \textbf{1D ResNet} (kế thừa từ \cite{mekruksavanich2024resnet}). 
+
+Quá trình lượng tử hóa giúp ép kích thước mạng nơ-ron từ hàng Megabyte xuống chỉ còn vài chục KB Flash và tốn chưa tới 30 KB RAM. Điều này trao quyền cho lõi vi xử lý ESP32-S3 \textbf{tự thực thi suy luận tại biên (On-device Inference)} trong tích tắc. Vi điều khiển không cần truyền dữ liệu thô đi đâu cả, nó tự tính toán và chỉ kích hoạt module 4G để gửi đúng một thông báo Alert khi có ngã xảy ra. Giải pháp này vừa không phụ thuộc vào điện thoại thông minh, vừa tiết kiệm pin tối đa, đáp ứng trọn vẹn cả độ chính xác học sâu (Bảng \ref{tab:survey_algorithm}) và tính khả thi phần cứng (Bảng \ref{tab:survey_mcu}).
 
 \section{Tổng quan chức năng}
 \label{section:2.2}
@@ -173,7 +205,7 @@ Biểu đồ use case tổng quát mô tả các tương tác chính giữa con 
 
 Các ca sử dụng (Use case) cốt lõi bao gồm: Đăng nhập \& Xác thực, Quản lý thiết bị, Quản lý bệnh nhân (Wearer), Gán/Thu hồi thiết bị, Giám sát thời gian thực, Xử lý cảnh báo té ngã, và Xem thống kê vận động.
 
-\subsection{Biểu đồ use case phân rã "Giám sát thời gian thực"}
+\subsection{Biểu đồ use case phân rã Giám sát thời gian thực}
 \label{subsection:2.2.2}
 Use case "Giám sát thời gian thực" yêu cầu hệ thống cung cấp cho nhân viên y tế một giao diện Dashboard tổng quan. Thông qua giao diện này, nhân viên y tế có thể theo dõi danh sách toàn bộ các thiết bị đang hoạt động, xem trạng thái kết nối mạng, mức pin hiện tại của từng thiết bị. Đặc biệt, chức năng này ứng dụng cơ chế \textbf{Đồng bộ cảnh báo lai (Hybrid Alert Sync)}, liên tục lắng nghe các gói tin từ MQTT Broker qua WebSocket để ngay lập tức hiển thị cảnh báo (kèm âm thanh và viền đỏ nhấp nháy) khi có sự cố té ngã xảy ra với độ trễ chưa tới 1 giây, đồng thời tự động cập nhật dữ liệu từ API. Biểu đồ phân rã cho nhóm chức năng này tập trung vào luồng hiển thị dữ liệu và cơ chế cảnh báo.
 
@@ -184,7 +216,7 @@ Use case "Giám sát thời gian thực" yêu cầu hệ thống cung cấp cho 
 %     \label{fig:use_case_giam_sat}
 % \end{figure}
 
-\subsection{Biểu đồ use case phân rã "Xử lý cảnh báo té ngã"}
+\subsection{Biểu đồ use case phân rã Xử lý cảnh báo té ngã}
 \label{subsection:2.2.3}
 Use case "Xử lý cảnh báo té ngã" mô tả quy trình tiếp nhận và xử lý sự cố. Khi màn hình Dashboard hiển thị cảnh báo té ngã, nhân viên y tế sẽ kiểm tra và đến hiện trường để hỗ trợ người bệnh. Sau khi hoàn thành sơ cứu hoặc xác minh tình trạng an toàn, nhân viên y tế sẽ tương tác với hệ thống bằng cách nhấn nút "Đã xử lý" (Resolve). Chức năng này cập nhật trạng thái của cảnh báo trong cơ sở dữ liệu để đảm bảo không có sự cố nào bị bỏ sót, đồng thời lưu trữ lịch sử để phục vụ báo cáo sau này.
 
@@ -195,7 +227,7 @@ Use case "Xử lý cảnh báo té ngã" mô tả quy trình tiếp nhận và x
 %     \label{fig:use_case_xu_ly}
 % \end{figure}
 
-\subsection{Biểu đồ use case phân rã "Gán thiết bị cho bệnh nhân"}
+\subsection{Biểu đồ use case phân rã Gán thiết bị cho bệnh nhân}
 \label{subsection:2.2.4}
 Use case "Gán thiết bị cho bệnh nhân" phục vụ mục đích thiết lập liên kết vật lý giữa một thiết bị ESP32 và một hồ sơ bệnh nhân. Nhân viên y tế sẽ chọn một thiết bị chưa được sử dụng và chọn một bệnh nhân từ danh sách. Một yêu cầu cực kỳ quan trọng ở bước này là việc nhập chiều cao của bệnh nhân, vì hệ thống cần thông số này để ước tính sải bước chân và tính toán quãng đường di chuyển dựa trên dữ liệu gia tốc. Việc gán thiết bị cũng tự động kích hoạt quá trình thu thập và lưu trữ viễn trắc cho bệnh nhân đó.
 
@@ -206,7 +238,7 @@ Use case "Gán thiết bị cho bệnh nhân" phục vụ mục đích thiết l
 %     \label{fig:use_case_gan_thiet_bi}
 % \end{figure}
 
-\subsection{Biểu đồ use case phân rã "Xem thống kê vận động"}
+\subsection{Biểu đồ use case phân rã Xem thống kê vận động}
 \label{subsection:2.2.5}
 Use case "Xem thống kê vận động" giúp nhân viên y tế và quản trị viên tra cứu các số liệu lịch sử. Người dùng có thể chọn một hồ sơ bệnh nhân cụ thể và thiết lập mốc thời gian cần tra cứu (ví dụ: trong tuần qua). Hệ thống sẽ truy xuất dữ liệu chuỗi thời gian (time-series) từ InfluxDB và vẽ các biểu đồ trực quan như: biểu đồ số bước chân đi bộ, biểu đồ số bước chạy, và biểu đồ khoảng cách di chuyển. Các biểu đồ này cung cấp thông tin y khoa quan trọng để đánh giá mức độ phục hồi hoặc suy giảm chức năng vận động của người bệnh.
 

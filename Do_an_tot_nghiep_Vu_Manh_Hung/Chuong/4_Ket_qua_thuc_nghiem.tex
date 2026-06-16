@@ -3,6 +3,21 @@
 
 \section{Phân tích và thiết kế hệ thống}
 
+\subsection{Kiến trúc tổng thể hệ thống}
+Hệ thống giám sát người cao tuổi 24/7 được cấu thành từ ba thành phần chính, giao tiếp mật thiết với nhau thông qua mạng di động 4G LTE và mạng Internet (như minh họa trong Hình \ref{fig:overall_architecture}):
+\begin{itemize}
+    \item \textbf{Thiết bị biên (ESP32):} Chịu trách nhiệm lấy mẫu cảm biến IMU, nội suy mô hình học máy nhúng (TinyML) và truyền tải gói tin cảnh báo qua giao thức bảo mật MQTT TLS.
+    \item \textbf{Đám mây - Server:} Sử dụng FastAPI Backend để xử lý lô-gic, định tuyến dữ liệu vào cơ sở dữ liệu quan hệ (PostgreSQL) hoặc chuỗi thời gian (InfluxDB).
+    \item \textbf{Giao diện Web (Next.js):} Phục vụ cho các y bác sĩ tại trạm điều khiển, có khả năng nhận cảnh báo theo thời gian thực (Real-time) qua WebSockets đồng thời truy xuất dữ liệu bệnh án qua REST API.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{Hinhve/arch.png}
+    \caption{Sơ đồ Kiến trúc Tổng thể Hệ thống IoT Eldercare}
+    \label{fig:overall_architecture}
+\end{figure}
+
 \subsection{Kiến trúc phần mềm Firmware}
 Phần sụn (firmware) trên vi điều khiển ESP32-S3 được thiết kế theo mô hình Hướng sự kiện (Event-Driven) và Máy trạng thái hữu hạn (FSM). Kiến trúc này giúp hệ thống hoạt động ổn định, phân tách rõ ràng các luồng xử lý và tối ưu hóa tài nguyên khi tích hợp mô hình học máy nhúng (TinyML). Hệ thống được chia thành ba lớp chính:
 \begin{itemize}
@@ -13,12 +28,30 @@ Phần sụn (firmware) trên vi điều khiển ESP32-S3 được thiết kế 
 
 Hoạt động thu thập dữ liệu và nội suy AI được thiết kế theo cơ chế cửa sổ trượt (Sliding Window) để không làm gián đoạn quá trình lấy mẫu tần số cao (100Hz) của cảm biến, đảm bảo tính liên tục của dữ liệu thời gian thực.
 
+Vòng đời hoạt động của phần sụn được quản lý bởi Máy trạng thái hữu hạn (FSM) đóng vai trò là hạt nhân điều phối trung tâm thông qua Default Event Loop. Hệ thống chuyển đổi tuần tự từ khởi tạo phần cứng (\texttt{STATE\_INIT}), thiết lập mạng 4G/WiFi và MQTT (\texttt{STATE\_CONNECTING}), cho đến chế độ vận hành tiêu chuẩn (\texttt{STATE\_NORMAL}). Tại chế độ bình thường, các thuật toán AI và đếm bước chân được chạy cục bộ. Ngoài ra, thiết bị có thể chuyển sang chế độ truyền dữ liệu thô (\texttt{STATE\_STREAMING}) khi nhận lệnh điều khiển từ đám mây, hoặc rơi vào trạng thái báo lỗi và tự động phục hồi (\texttt{STATE\_ERROR}) khi gặp sự cố ngắt kết nối vật lý (chi tiết tại Hình \ref{fig:firmware_fsm}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Hinhve/fsm.png}
+    \caption{Sơ đồ Chuyển trạng thái (FSM) của Firmware trên thiết bị ESP32}
+    \label{fig:firmware_fsm}
+\end{figure}
+
 \subsection{Thiết kế cơ sở dữ liệu}
 Hệ thống sử dụng mô hình cơ sở dữ liệu kép (Dual-Database) để đáp ứng đồng thời yêu cầu quản lý thông tin phức tạp có tính liên kết và khả năng lưu trữ dữ liệu thời gian thực với tần suất lớn.
 \begin{itemize}
     \item \textbf{Cơ sở dữ liệu quan hệ (PostgreSQL):} Được sử dụng để quản lý thông tin siêu dữ liệu (metadata). Các thực thể chính bao gồm tổ chức (\texttt{organizations}), người dùng (\texttt{users}), người bệnh đeo thiết bị (\texttt{wearers}), danh mục thiết bị (\texttt{devices}), và lịch sử cảnh báo (\texttt{alerts}). Mô hình này cho phép gán/hủy linh hoạt một thiết bị cho một người đeo cụ thể, lưu trữ hồ sơ y tế cơ bản, đồng thời theo dõi trạng thái pin và thời gian online của thiết bị.
     \item \textbf{Cơ sở dữ liệu chuỗi thời gian (InfluxDB):} Chuyên dụng để lưu trữ dữ liệu có tính liên tục và số lượng lớn. Trong giai đoạn thu thập dữ liệu (Phase 1), InfluxDB lưu trữ dữ liệu cảm biến thô (\texttt{imu\_raw}) thành từng lô (batch) phục vụ huấn luyện mô hình học máy. Trong giai đoạn vận hành thực tế (Phase 2), nó lưu trữ thông tin đo đếm bước chân và quãng đường di chuyển (\texttt{telemetry}) để ứng dụng web có thể vẽ biểu đồ theo dõi sức khỏe một cách trực quan.
 \end{itemize}
+
+Sơ đồ Thực thể - Mối quan hệ (Entity-Relationship Diagram - ERD) của cơ sở dữ liệu quan hệ (PostgreSQL) được thể hiện như trong Hình \ref{fig:erd}. Sơ đồ này mô tả chi tiết các bảng siêu dữ liệu và mối liên kết khóa ngoại (Foreign Key) giữa chúng, với trọng tâm là kiến trúc Đa khách thuê (Multi-tenancy) thông qua trường \texttt{org\_id}. Các sự kiện từ thiết bị và cảnh báo té ngã đều được ánh xạ chặt chẽ với bệnh nhân và thiết bị phát sinh nhằm đảm bảo tính toàn vẹn dữ liệu.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Hinhve/erd.png}
+    \caption{Sơ đồ Thực thể - Mối quan hệ (ERD) của cơ sở dữ liệu PostgreSQL}
+    \label{fig:erd}
+\end{figure}
 
 \subsection{Thiết kế giao thức truyền thông}
 Hệ thống phân tách luồng dữ liệu thành hai lớp giao thức riêng biệt để đảm bảo hiệu năng và tính bảo mật:
@@ -71,9 +104,16 @@ Phần mềm máy chủ (Backend) được phát triển dựa trên \textit{fra
 Giao diện người dùng (Frontend) được thiết kế chuyên biệt để hỗ trợ nhân viên y tế giám sát đồng thời số lượng lớn thiết bị trong viện dưỡng lão. Ứng dụng được xây dựng trên nền tảng Next.js 16 (kiến trúc App Router) kết hợp cùng Turbopack, với các đặc điểm kỹ thuật nổi bật:
 \begin{itemize}
     \item \textbf{Quản lý trạng thái và Dữ liệu:} Sử dụng thư viện \texttt{TanStack Query} để tự động đồng bộ và lưu bộ nhớ đệm (cache) dữ liệu từ Backend, kết hợp cùng \texttt{Zustand} để quản lý các trạng thái cục bộ.
-    \item \textbf{Cơ chế Đồng bộ cảnh báo lai (Hybrid Alert Sync):} Giao diện tích hợp \texttt{MQTT.js} kết nối trực tiếp với Broker qua WebSockets. Khi có sự kiện té ngã, cảnh báo khẩn cấp (âm thanh và banner) xuất hiện ngay lập tức (trễ < 1s). Song song đó, Frontend chủ động gửi tín hiệu "invalidate cache" để TanStack Query kéo danh sách lịch sử cảnh báo mới nhất từ Backend về đồng bộ, kết hợp hoàn hảo giữa tốc độ của MQTT và tính nhất quán của REST API.
+    \item \textbf{Cơ chế Đồng bộ cảnh báo lai (Hybrid Alert Sync):} Giao diện tích hợp \texttt{MQTT.js} kết nối trực tiếp với Broker qua WebSockets. Khi có sự kiện té ngã, cảnh báo khẩn cấp (âm thanh và banner) xuất hiện ngay lập tức (trễ < 1s). Song song đó, Frontend chủ động gửi tín hiệu "invalidate cache" để TanStack Query kéo danh sách lịch sử cảnh báo mới nhất từ Backend về đồng bộ, kết hợp hoàn hảo giữa tốc độ của MQTT và tính nhất quán của REST API (Hình \ref{fig:hybrid_sync}).
     \item \textbf{Thẩm mỹ và trải nghiệm người dùng (UI/UX):} Thiết kế sử dụng \texttt{Tailwind CSS} và thư viện \texttt{Shadcn UI}, mang lại một giao diện hiện đại, trực quan, hỗ trợ thiết kế đáp ứng (Responsive) xuất sắc trên cả màn hình máy tính bảng và màn hình giám sát trung tâm.
 \end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Hinhve/sync.png}
+    \caption{Sơ đồ Tuần tự của Cơ chế Đồng bộ cảnh báo lai (Hybrid Alert Sync) trên Frontend}
+    \label{fig:hybrid_sync}
+\end{figure}
 
 \section{Kết quả đạt được và Kiểm thử}
 
