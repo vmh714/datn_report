@@ -34,6 +34,22 @@
 \usepackage{float}
 \usepackage{subcaption}
 \usepackage{xurl}
+% ----- TikZ cho biểu đồ use case UML -----
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, positioning, fit, arrows.meta, backgrounds, calc}
+\tikzset{
+    usecase/.style={draw, ellipse, align=center, minimum width=3cm, minimum height=0.95cm, inner sep=1pt, font=\small},
+    ucsystem/.style={draw, rounded corners, inner xsep=1.1cm, inner ysep=0.5cm},
+    assoc/.style={-},
+    ucinc/.style={-{Latex[length=2mm]}, dashed},
+    ucactorpic/.pic={
+        \draw[thick] (0,0.55) circle (0.16);
+        \draw[thick] (0,0.39) -- (0,-0.15);
+        \draw[thick] (-0.28,0.22) -- (0.28,0.22);
+        \draw[thick] (0,-0.15) -- (-0.22,-0.62);
+        \draw[thick] (0,-0.15) -- (0.22,-0.62);
+    },
+}
 
 \usepackage[nonumberlist, nopostdot, nogroupskip, acronym]{glossaries}
 \usepackage{glossary-superragged}
@@ -298,12 +314,6 @@
 \chapter{KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN} %Kết luận và hướng phát triển}
 \label{chapter:conclusion}
 \subfile{Chuong/6_Ket_luan}
-
-\newpage
-%\pagestyle{fancy} % Áp dụng header và footer
-\chapter*{MỘT SỐ LƯU Ý VỀ TÀI LIỆU THAM KHẢO} %Kết luận và hướng phát triển}
-\label{chapter:reference}
-\subfile{Chuong/7_Luu_y_tai_lieu_tham_khao}
 
 
 % ===================================================

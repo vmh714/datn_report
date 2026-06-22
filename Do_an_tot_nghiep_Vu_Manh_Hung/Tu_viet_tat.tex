@@ -1,34 +1,88 @@
 %\makeglossaries
 \makenoidxglossaries
 
-% Danh mục thuật ngữ và từ viết tắt
-\newglossaryentry{iaas}{
-    type=\acronymtype,
-    name={IaaS},
-    description={Dịch vụ hạ tầng},
-    first={Dịch vụ hạ tầng (Infrastructure  as  a  Service - IaaS)}
-}
-\newglossaryentry{API}{
-    type=\acronymtype,
-    name={API},
-    description={Giao diện lập trình ứng dụng (Application Programming Interface)},
-    first={API}
-}
-\newglossaryentry{EUD}{
-    type=\acronymtype,
-    name={EUD},
-    description={Phát triển ứng dụng người dùng cuối(End-User Development)},
-    first={End-User Development}
-}
-\newglossaryentry{GWT}{
-    type=\acronymtype,
-    name={GWT},
-    description={Công cụ lập trình Javascript bằng Java của Google (Google Web Toolkit)},
-    first={Công cụ lập trình Javascript bằng Java của Google (Google Web Toolkit}
-}
-\newglossaryentry{HTML}{
-    type=\acronymtype,
-    name={HTML},
-    description={Ngôn ngữ đánh dấu siêu văn bản (HyperText Markup Language)},
-    first={Dịch vụ hạ tầng (Infrastructure  as  a  Service - IaaS)}
-}
+% ====================== DANH MỤC THUẬT NGỮ VÀ TỪ VIẾT TẮT ======================
+% Mỗi mục: name = từ viết tắt, description = nghĩa tiếng Việt (kèm cụm tiếng Anh).
+% Toàn bộ được in qua \glsaddall + \printnoidxglossaries trong DoAn.tex.
+
+% ---- Trí tuệ nhân tạo / Học sâu ----
+\newglossaryentry{ai}{type=\acronymtype, name={AI}, description={Trí tuệ nhân tạo (Artificial Intelligence)}}
+\newglossaryentry{ml}{type=\acronymtype, name={ML}, description={Học máy (Machine Learning)}}
+\newglossaryentry{tinyml}{type=\acronymtype, name={TinyML}, description={Học máy thu nhỏ trên vi điều khiển (Tiny Machine Learning)}}
+\newglossaryentry{ann}{type=\acronymtype, name={ANN}, description={Mạng nơ-ron nhân tạo (Artificial Neural Network)}}
+\newglossaryentry{cnn}{type=\acronymtype, name={CNN}, description={Mạng nơ-ron tích chập (Convolutional Neural Network)}}
+\newglossaryentry{rnn}{type=\acronymtype, name={RNN}, description={Mạng nơ-ron hồi quy (Recurrent Neural Network)}}
+\newglossaryentry{lstm}{type=\acronymtype, name={LSTM}, description={Mạng bộ nhớ dài--ngắn hạn (Long Short-Term Memory)}}
+\newglossaryentry{tcn}{type=\acronymtype, name={TCN}, description={Mạng tích chập theo thời gian (Temporal Convolutional Network)}}
+\newglossaryentry{resnet}{type=\acronymtype, name={ResNet}, description={Mạng nơ-ron thặng dư (Residual Network)}}
+\newglossaryentry{se}{type=\acronymtype, name={SE}, description={Khối nén--kích thích (Squeeze-and-Excitation)}}
+\newglossaryentry{gap}{type=\acronymtype, name={GAP}, description={Gộp trung bình toàn cục (Global Average Pooling)}}
+\newglossaryentry{gmp}{type=\acronymtype, name={GMP}, description={Gộp cực đại toàn cục (Global Max Pooling)}}
+\newglossaryentry{relu}{type=\acronymtype, name={ReLU}, description={Đơn vị tuyến tính chỉnh lưu (Rectified Linear Unit)}}
+\newglossaryentry{bn}{type=\acronymtype, name={BN}, description={Chuẩn hóa theo lô (Batch Normalization)}}
+\newglossaryentry{kd}{type=\acronymtype, name={KD}, description={Chưng cất tri thức (Knowledge Distillation)}}
+\newglossaryentry{ptq}{type=\acronymtype, name={PTQ}, description={Lượng tử hóa sau huấn luyện (Post-Training Quantization)}}
+\newglossaryentry{int8}{type=\acronymtype, name={INT8}, description={Số nguyên 8-bit (8-bit Integer)}}
+
+% ---- Bài toán nhận diện hành vi / té ngã ----
+\newglossaryentry{har}{type=\acronymtype, name={HAR}, description={Nhận dạng hoạt động người (Human Activity Recognition)}}
+\newglossaryentry{adl}{type=\acronymtype, name={ADL}, description={Hoạt động sinh hoạt hàng ngày (Activities of Daily Living)}}
+\newglossaryentry{lso}{type=\acronymtype, name={LSO}, description={Phương pháp đánh giá tách đối tượng (Leave-Subjects-Out)}}
+\newglossaryentry{svm}{type=\acronymtype, name={SVM}, description={Độ lớn véc-tơ tín hiệu gia tốc (Signal Vector Magnitude)}}
+\newglossaryentry{rms}{type=\acronymtype, name={RMS}, description={Căn quân phương (Root Mean Square)}}
+
+% ---- Thư viện / nền tảng học máy nhúng ----
+\newglossaryentry{tflite}{type=\acronymtype, name={TFLite}, description={Bộ suy luận học máy gọn nhẹ TensorFlow Lite}}
+\newglossaryentry{tflm}{type=\acronymtype, name={TFLM}, description={TensorFlow Lite cho vi điều khiển (TensorFlow Lite for Microcontrollers)}}
+\newglossaryentry{espnn}{type=\acronymtype, name={ESP-NN}, description={Thư viện hàm mạng nơ-ron tăng tốc của Espressif (Espressif Neural Network)}}
+
+% ---- Vi điều khiển / phần cứng ----
+\newglossaryentry{imu}{type=\acronymtype, name={IMU}, description={Đơn vị đo lường quán tính (Inertial Measurement Unit)}}
+\newglossaryentry{mcu}{type=\acronymtype, name={MCU}, description={Vi điều khiển (Microcontroller Unit)}}
+\newglossaryentry{fsm}{type=\acronymtype, name={FSM}, description={Máy trạng thái hữu hạn (Finite State Machine)}}
+\newglossaryentry{rtos}{type=\acronymtype, name={RTOS}, description={Hệ điều hành thời gian thực (Real-Time Operating System)}}
+\newglossaryentry{espidf}{type=\acronymtype, name={ESP-IDF}, description={Bộ công cụ phát triển IoT của Espressif (Espressif IoT Development Framework)}}
+\newglossaryentry{isr}{type=\acronymtype, name={ISR}, description={Trình phục vụ ngắt (Interrupt Service Routine)}}
+\newglossaryentry{pcnt}{type=\acronymtype, name={PCNT}, description={Ngoại vi bộ đếm xung (Pulse Counter)}}
+\newglossaryentry{gpio}{type=\acronymtype, name={GPIO}, description={Chân vào/ra đa dụng (General-Purpose Input/Output)}}
+\newglossaryentry{i2c}{type=\acronymtype, name={I2C}, description={Chuẩn giao tiếp liên mạch tích hợp (Inter-Integrated Circuit)}}
+\newglossaryentry{uart}{type=\acronymtype, name={UART}, description={Bộ thu--phát không đồng bộ (Universal Asynchronous Receiver-Transmitter)}}
+\newglossaryentry{spi}{type=\acronymtype, name={SPI}, description={Giao tiếp ngoại vi nối tiếp (Serial Peripheral Interface)}}
+\newglossaryentry{adc}{type=\acronymtype, name={ADC}, description={Bộ chuyển đổi tương tự--số (Analog-to-Digital Converter)}}
+\newglossaryentry{simd}{type=\acronymtype, name={SIMD}, description={Một lệnh xử lý nhiều dữ liệu (Single Instruction, Multiple Data)}}
+\newglossaryentry{sram}{type=\acronymtype, name={SRAM}, description={Bộ nhớ truy cập ngẫu nhiên tĩnh (Static Random-Access Memory)}}
+\newglossaryentry{psram}{type=\acronymtype, name={PSRAM}, description={Bộ nhớ giả tĩnh (Pseudo-Static Random-Access Memory)}}
+\newglossaryentry{fifo}{type=\acronymtype, name={FIFO}, description={Cơ chế hàng đợi vào trước ra trước (First In, First Out)}}
+\newglossaryentry{pcb}{type=\acronymtype, name={PCB}, description={Bảng mạch in (Printed Circuit Board)}}
+
+% ---- Truyền thông / mạng ----
+\newglossaryentry{iot}{type=\acronymtype, name={IoT}, description={Internet vạn vật (Internet of Things)}}
+\newglossaryentry{iomt}{type=\acronymtype, name={IoMT}, description={Internet vạn vật trong y tế (Internet of Medical Things)}}
+\newglossaryentry{mqtt}{type=\acronymtype, name={MQTT}, description={Giao thức truyền tin theo hàng đợi (Message Queuing Telemetry Transport)}}
+\newglossaryentry{tls}{type=\acronymtype, name={TLS}, description={Giao thức bảo mật tầng truyền tải (Transport Layer Security)}}
+\newglossaryentry{qos}{type=\acronymtype, name={QoS}, description={Chất lượng dịch vụ (Quality of Service)}}
+\newglossaryentry{pppos}{type=\acronymtype, name={PPPoS}, description={Giao thức điểm--điểm trên cổng nối tiếp (Point-to-Point Protocol over Serial)}}
+\newglossaryentry{lte}{type=\acronymtype, name={LTE}, description={Công nghệ di động tiến hóa dài hạn (Long-Term Evolution)}}
+\newglossaryentry{ltem}{type=\acronymtype, name={LTE-M}, description={Chuẩn LTE công suất thấp cho thiết bị máy móc (LTE-Machine / Cat-M1)}}
+\newglossaryentry{nbiot}{type=\acronymtype, name={NB-IoT}, description={IoT băng hẹp (Narrowband IoT)}}
+\newglossaryentry{rai}{type=\acronymtype, name={RAI}, description={Chỉ thị hỗ trợ giải phóng kết nối (Release Assistance Indication)}}
+\newglossaryentry{rrc}{type=\acronymtype, name={RRC}, description={Điều khiển tài nguyên vô tuyến (Radio Resource Control)}}
+\newglossaryentry{rssi}{type=\acronymtype, name={RSSI}, description={Chỉ số cường độ tín hiệu thu (Received Signal Strength Indicator)}}
+
+% ---- Phần mềm máy chủ / web ----
+\newglossaryentry{api}{type=\acronymtype, name={API}, description={Giao diện lập trình ứng dụng (Application Programming Interface)}}
+\newglossaryentry{rest}{type=\acronymtype, name={REST}, description={Kiến trúc chuyển trạng thái biểu diễn (Representational State Transfer)}}
+\newglossaryentry{http}{type=\acronymtype, name={HTTP}, description={Giao thức truyền siêu văn bản (HyperText Transfer Protocol)}}
+\newglossaryentry{jwt}{type=\acronymtype, name={JWT}, description={Mã thông báo web dạng JSON (JSON Web Token)}}
+\newglossaryentry{orm}{type=\acronymtype, name={ORM}, description={Ánh xạ đối tượng--quan hệ (Object-Relational Mapping)}}
+\newglossaryentry{crud}{type=\acronymtype, name={CRUD}, description={Bốn thao tác dữ liệu Tạo--Đọc--Sửa--Xóa (Create, Read, Update, Delete)}}
+\newglossaryentry{uuid}{type=\acronymtype, name={UUID}, description={Định danh duy nhất toàn cục (Universally Unique Identifier)}}
+\newglossaryentry{erd}{type=\acronymtype, name={ERD}, description={Sơ đồ thực thể--liên kết (Entity-Relationship Diagram)}}
+\newglossaryentry{uml}{type=\acronymtype, name={UML}, description={Ngôn ngữ mô hình hóa thống nhất (Unified Modeling Language)}}
+\newglossaryentry{ui}{type=\acronymtype, name={UI}, description={Giao diện người dùng (User Interface)}}
+\newglossaryentry{ux}{type=\acronymtype, name={UX}, description={Trải nghiệm người dùng (User Experience)}}
+
+% ---- Cảm biến sinh hiệu / định vị ----
+\newglossaryentry{ecg}{type=\acronymtype, name={ECG}, description={Điện tâm đồ (Electrocardiogram)}}
+\newglossaryentry{ppg}{type=\acronymtype, name={PPG}, description={Phép đo thể tích mạch bằng quang học (Photoplethysmography)}}
+\newglossaryentry{gps}{type=\acronymtype, name={GPS}, description={Hệ thống định vị toàn cầu (Global Positioning System)}}

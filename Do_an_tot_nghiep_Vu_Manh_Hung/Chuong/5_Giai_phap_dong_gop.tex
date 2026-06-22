@@ -49,44 +49,43 @@ Kiến trúc CNN-LSTM ban đầu (v1--v4) gặp vấn đề nghiêm trọng ở 
 
 \subsection{Giải pháp}
 
-Quá trình tối ưu hóa kiến trúc diễn ra qua ba thế hệ chính, mỗi thế hệ giải quyết một nhóm vấn đề cụ thể còn tồn đọng từ thế hệ trước.
+Quá trình tối ưu hóa kiến trúc diễn ra qua ba thế hệ chính, mỗi thế hệ tháo gỡ một nút thắt còn tồn đọng từ thế hệ trước.
 
-Thế hệ đầu tiên là mô hình TCN (Temporal Convolutional Network --- phiên bản v8 đến v12), trong đó toàn bộ khối LSTM được thay thế bằng chồng tích chập có giãn nhân quả (dilated causal convolution). Cụ thể, kiến trúc TCN bao gồm hai chồng (stack), mỗi chồng có bốn lớp tích chập với hệ số giãn (dilation factor) tăng dần theo cấp số nhân $d \in \{1, 2, 4, 8\}$. Cấu hình này tạo ra trường tiếp nhận (receptive field) hiệu quả bao phủ 120 mẫu tương đương 1,2 giây tín hiệu, đủ để bao trọn pha động học của một cú ngã. Việc chuyển sang TCN giải quyết hoàn toàn vấn đề lượng tử hóa, cho phép xuất mô hình sang TFLite INT8 lần đầu thành công.
+Thế hệ thứ nhất là mô hình TCN (Temporal Convolutional Network --- phiên bản v8 đến v22), thay toàn bộ khối LSTM bằng chồng tích chập giãn nhân quả (dilated causal convolution) với hệ số giãn tăng dần $d \in \{1, 2, 4, 8\}$. Việc này giải quyết hoàn toàn vấn đề lượng tử hóa và cho độ chính xác cao nhất, đặc biệt ở nhãn chuyển tiếp Trans nhờ trường tiếp nhận dài bao trọn pha động học của cú ngã. Tuy nhiên, tích chập giãn nở khi xuất sang TFLite lại sinh ra các toán tử xáo trộn bộ nhớ không được ESP-NN tăng tốc, khiến thời gian suy luận lên tới hơn 2 giây trên ESP32-S3 --- bất khả thi cho ứng dụng thời gian thực (chi tiết tại Mục 4.3.2).
 
-Thế hệ thứ hai là mô hình 1D ResNet tối ưu hóa phần cứng (phiên bản v22 đến v25). Cải tiến chính so với TCN gồm ba điểm. Thứ nhất, kiến trúc ResNet sử dụng kết nối tắt phân cấp (hierarchical skip connection) riêng cho từng khối, cho phép gradient lan truyền ổn định hơn qua nhiều lớp so với kết nối tắt ngang hàng (lateral residual) của TCN. Thứ hai, toàn bộ Conv1D thông thường được thay thế bằng \texttt{SeparableConv1D} (tích chập phân tách theo chiều sâu --- depthwise separable convolution), khai thác khả năng tăng tốc 6,3 lần của thư viện ESP-NN cho phép tính depthwise. Thứ ba, hàm kích hoạt \texttt{relu6} thay cho \texttt{relu} giới hạn giá trị kích hoạt trong khoảng $[0, 6]$ để tránh tràn số khi lượng tử hóa INT8.
+Thế hệ thứ hai là dòng CNN thuần tối ưu phần cứng (phiên bản v23 đến v30). Toàn bộ tích chập giãn nở được thay bằng tích chập tách kênh (\texttt{SeparableConv1D}), tích chập điểm $1 \times 1$, hàm kích hoạt \texttt{relu6} và hạ mẫu bằng strided conv kết hợp \texttt{MaxPool} --- tất cả đều là toán tử được ESP-NN tăng tốc --- kéo thời gian suy luận xuống dưới 20~ms. Một biến thể trong giai đoạn này (v25) từng thử bổ sung khối thặng dư (Residual) và Squeeze-and-Excitation (SE); tuy nhiên hàm sigmoid trong SE không được tăng tốc và làm phình siêu dữ liệu của tệp INT8, nên cuối cùng kiến trúc được tinh giản thành CNN thuần. Hạn chế còn lại của thế hệ này là khối gộp đặc trưng GAP+GMP nén phẳng trục thời gian, khiến mô hình yếu ở hai nhãn Idle và Trans.
 
-Bên cạnh đó, hai cơ chế học đặc trưng bổ sung được tích hợp vào mỗi khối residual. Khối SE (Squeeze-and-Excitation) thực hiện cơ chế chú ý theo kênh (channel attention), cho phép mô hình tự động học cách phân bổ trọng số khác nhau cho từng trục cảm biến tùy theo pha chuyển động hiện tại. Đặc biệt, các lớp chiếu tuyến tính (projection) trong SE Block sử dụng \texttt{Conv1D} với kernel $1 \times 1$ thay vì lớp kết nối đầy đủ (Dense layer), nhằm tương thích tối ưu với ESP-NN vốn tăng tốc tích chập điểm (pointwise convolution) lên 14,2 lần. Cơ chế gộp kép (Dual Pooling) kết hợp đầu ra của Global Average Pooling và Global Max Pooling trước khi đưa vào lớp phân loại cuối, giúp mô hình đồng thời nắm bắt được đặc trưng phân bố trung bình của chuỗi tín hiệu lẫn đỉnh gia tốc cực đại --- vốn là đặc trưng phân biệt quan trọng nhất của cú ngã.
+Thế hệ thứ ba --- đóng góp kiến trúc trọng tâm --- là mô hình \texttt{v30\_optimize}. Sau khi một hướng chưng cất tri thức (Knowledge Distillation) từ TCN sang CNN được thử nghiệm nhưng thất bại (không thể khắc phục giới hạn của head pooling), giải pháp là cải tiến trực tiếp kiến trúc: bổ sung nhánh Flatten vào khối gộp (head GAP+GMP+Flatten) để giữ lại layout thời gian của bản đồ đặc trưng, kết hợp tăng độ sâu và độ rộng mạng. Nhờ đó, v30\_optimize chắt lọc được nguyên lý mô hình hóa thời gian của TCN trong một CNN vẫn thuần toán tử ESP-NN, nâng F1-Trans từ 0,799 lên 0,907 (xấp xỉ TCN) mà chỉ tốn 56,7~ms suy luận. Đáng chú ý, một thí nghiệm cắt bỏ (ablation) cho thấy chính khâu chưng cất tri thức là không cần thiết: bản tắt hoàn toàn KD đạt kết quả ngang bằng hoặc nhỉnh hơn mọi bản có KD, khẳng định toàn bộ thắng lợi đến từ kiến trúc head chứ không phải từ nhãn mềm. Cuối cùng, việc đổi tiêu chí chọn mô hình tốt nhất từ \texttt{val\_loss} sang \texttt{val\_accuracy} (do \texttt{val\_loss} không trọng số thiên về lớp đa số) còn nâng thêm điểm F1-Trans và đưa Fall recall lên 97,73\%.
 
 \subsection{Kết quả}
 
-Bảng \ref{tab:v25_architecture} mô tả kiến trúc lớp đầy đủ của mô hình v25 với tổng cộng 19.253 tham số (18.453 có thể huấn luyện), nhỏ hơn đáng kể so với kiến trúc CNN-LSTM ban đầu nhờ SeparableConv1D và stride-based downsampling thay cho MaxPooling.
+Bảng \ref{tab:v30opt_architecture} mô tả kiến trúc lớp đầy đủ của mô hình \texttt{v30\_optimize} với 26.629 tham số. So với biến thể v25 trước đó, kiến trúc này loại bỏ hoàn toàn khối SE và kết nối thặng dư (vốn chứa toán tử không được tăng tốc), bù lại bổ sung nhánh Flatten trong khối gộp để bảo toàn thông tin theo trục thời gian --- chính cải tiến giúp vượt nút thắt nhãn Idle/Trans.
 
 \begin{table}[H]
 \centering
-\caption{Kiến trúc layer-by-layer của mô hình v25 (1D ResNet)}
-\label{tab:v25_architecture}
+\caption{Kiến trúc layer-by-layer của mô hình v30\_optimize (CNN tách kênh)}
+\label{tab:v30opt_architecture}
 \begin{tabular}{|l|l|c|}
 \hline
 \textbf{Khối} & \textbf{Thành phần} & \textbf{Output shape} \\
 \hline
 Đầu vào & --- & $(200, 6)$ \\
-Stem    & Conv1D(16, k=3, s=2) + BN + ReLU6               & $(100, 16)$ \\
-Block 1 & SepConv1D(16, k=3) $\times$2 + SE + Residual    & $(100, 16)$ \\
-Block 2 & SepConv1D(32, k=3, s=2) $\times$2 + SE + Residual & $(50, 32)$ \\
-Block 3 & SepConv1D(32, k=3) $\times$2 + SE + Residual    & $(50, 32)$ \\
-Block 4 & SepConv1D(64, k=3, s=2) $\times$2 + SE + Residual & $(25, 64)$ \\
-Head    & GAP + GMP $\rightarrow$ Concat $\rightarrow$ Dropout(0,3) $\rightarrow$ Dense(5) & $(5,)$ \\
+Stem    & Conv1D(32, k=3, s=2) + BN + ReLU6                  & $(100, 32)$ \\
+Block 1 & SepConv1D(48, k=3) $\times$2 + ReLU6 + MaxPool(2)  & $(50, 48)$ \\
+Block 2 & SepConv1D(64, k=3) $\times$2 + ReLU6 + MaxPool(2)  & $(25, 64)$ \\
+Block 3 & SepConv1D(96, k=3) + ReLU6 + MaxPool(2)            & $(12, 96)$ \\
+Head    & GAP $\parallel$ GMP $\parallel$ Flatten $\rightarrow$ Concat (1.344) $\rightarrow$ Dropout $\rightarrow$ Dense(5) & $(5,)$ \\
 \hline
-\multicolumn{2}{|l|}{Tổng tham số (trainable)} & 19.253 (18.453) \\
+\multicolumn{2}{|l|}{Tổng tham số} & 26.629 \\
 \hline
 \end{tabular}
 \end{table}
 
-Bảng \ref{tab:espnn_speedup} tổng hợp hệ số tăng tốc của các kỹ thuật tối ưu hóa phần cứng được tích hợp trong kiến trúc v25 khi chạy trên ESP32-S3 với thư viện ESP-NN.
+Bảng \ref{tab:espnn_speedup} tổng hợp hệ số tăng tốc của các toán tử thân thiện ESP-NN tạo nên kiến trúc này khi chạy trên ESP32-S3.
 
 \begin{table}[H]
 \centering
-\caption{Hệ số tăng tốc của các kỹ thuật tối ưu hóa ESP-NN trong kiến trúc v25}
+\caption{Hệ số tăng tốc của các toán tử ESP-NN trong kiến trúc CNN tách kênh}
 \label{tab:espnn_speedup}
 \begin{tabular}{|l|c|}
 \hline
@@ -100,7 +99,7 @@ Lượng tử hóa INT8 (toàn bộ)    & $\sim$4$\times$ (bộ nhớ), $\sim$2$
 \end{tabular}
 \end{table}
 
-Kết quả thực đo trên phần cứng cho thấy thời gian suy luận của mô hình v25 đạt trung bình \textbf{70,23~ms} cho một cửa sổ đầu vào $200 \times 6$, chiếm khoảng 14\% chu kỳ cập nhật 500~ms của cơ chế cửa sổ trượt, đảm bảo tính thời gian thực cho hệ thống phát hiện té ngã. Trên 1.200 mẫu kiểm thử thực tế trên phần cứng, mô hình đạt độ chính xác 90,33\% và Fall Recall \textbf{99,00\%}, với khoảng cách desktop--firmware chỉ 0,68\%, xác nhận pipeline lượng tử hóa INT8 ổn định. Kết quả so sánh đầy đủ giữa các phiên bản được trình bày trong Bảng \ref{tab:model_comparison} tại mục 4.3.1.
+Kết quả thực đo trên phần cứng cho thấy v30\_optimize đạt thời gian suy luận trung bình \textbf{56,7~ms} cho một cửa sổ đầu vào $200 \times 6$ (chiếm khoảng 11\% chu kỳ cập nhật 500~ms của cơ chế cửa sổ trượt), bảo đảm tính thời gian thực. Mô hình đạt độ chính xác firmware \textbf{95,30\%} và Fall Recall 97,50\%, với điểm F1 nhãn Trans đạt 0,907 --- vượt xa các biến thể CNN baseline (v30: F1-Trans 0,799) và mô hình v25 trước đây (độ chính xác 90,33\%). Như vậy, cải tiến head giữ trục thời gian đã nâng đáng kể chất lượng phân loại ở các nhãn khó mà gần như không phải đánh đổi về khả năng triển khai. Kết quả so sánh đầy đủ giữa các kiến trúc được trình bày trong các Bảng \ref{tab:model_comparison} và \ref{tab:mcu_arch_compare} tại Mục 4.3.
 
 % -----------------------------------------------------------------------
 

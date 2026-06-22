@@ -26,6 +26,18 @@ Khác với các hành vi mang tính chu kỳ, té ngã là một chuỗi sự k
 
 Nhờ sự kết hợp của cả \textbf{đỉnh gia tốc đột biến} và \textbf{sự thay đổi tư thế tĩnh (orientation change)}, hệ thống có thể dễ dàng phân biệt được một cú té ngã nguy hiểm so với các hành động mạnh khác như nhảy lên, hoặc việc bệnh nhân chủ động nằm xuống giường \cite{tseng2025wearable, lee2021deep}.
 
+\subsection{Bộ dữ liệu thực nghiệm SisFall}
+\label{subsection:3.1.3}
+Để huấn luyện và đánh giá các mô hình nhận diện, đồ án sử dụng \textbf{SisFall} --- một bộ dữ liệu công khai về vận động và té ngã được công bố năm 2017 \cite{sucerquia2017sisfall}. Đây là một trong số ít các bộ dữ liệu vừa có quy mô lớn, vừa bao gồm dữ liệu thu thập trực tiếp từ người cao tuổi --- đúng đối tượng đích của hệ thống --- thay vì chỉ mô phỏng bằng người trẻ.
+
+Dữ liệu được thu bằng một thiết bị đeo tự chế đặt ở \textbf{thắt lưng} (trùng với vị trí đeo của thiết bị trong đồ án), tích hợp gia tốc kế và con quay hồi chuyển, lấy mẫu ở tần số \textbf{200~Hz}. Mỗi bản ghi gồm sáu kênh tín hiệu: ba trục gia tốc $(a_x, a_y, a_z)$ trong dải $\pm 8g$ và ba trục vận tốc góc $(g_x, g_y, g_z)$ trong dải $\pm 2000\,^{\circ}/s$ --- cũng chính là dải đo của cảm biến MPU6050 dùng ở thiết bị thật, bảo đảm tính tương thích giữa dữ liệu huấn luyện và dữ liệu suy luận thực tế. Cụ thể, bộ dữ liệu bao gồm:
+\begin{itemize}
+    \item \textbf{38 đối tượng:} 23 người trẻ (mã \texttt{SA01}--\texttt{SA23}, độ tuổi 19--30) và 15 người cao tuổi (mã \texttt{SE01}--\texttt{SE15}, độ tuổi 60--75).
+    \item \textbf{19 loại hoạt động sinh hoạt hằng ngày} (ADL, mã \texttt{D01}--\texttt{D19}): đi bộ, chạy bộ, lên/xuống cầu thang, ngồi xuống, đứng dậy, nằm, cúi người\ldots
+    \item \textbf{15 kiểu té ngã} (mã \texttt{F01}--\texttt{F15}) theo nhiều hướng và bối cảnh khác nhau: ngã trước/sau/ngang khi đang đi, ngã khi đang ngồi, ngất xỉu\ldots
+\end{itemize}
+Mỗi hoạt động được lặp lại nhiều lần trên nhiều đối tượng, tạo nên khoảng 4.500 bản ghi tín hiệu. Cần lưu ý rằng vì lý do an toàn, phần lớn các kịch bản té ngã được thực hiện bởi nhóm người trẻ, khiến bộ dữ liệu thiên lệch về đặc trưng của người trẻ --- một hạn chế quan trọng cần cân nhắc khi đánh giá khả năng tổng quát hóa. Trong đồ án, dữ liệu thô được giảm tần số xuống 100~Hz, ánh xạ một tập con các mã hoạt động sang sơ đồ 5 nhãn (chi tiết ánh xạ tại Bảng~\ref{tab:label_mapping} của Chương~5) và được phân chia theo đối tượng (subject-independent) nhằm phản ánh trung thực khả năng vận hành trên người dùng mới (chi tiết tại Chương~4).
+
 \section{Nhóm Công nghệ Phần cứng và Giao thức mạng}
 \label{section:3.2}
 
@@ -97,13 +109,13 @@ MQTT (Message Queuing Telemetry Transport) là một giao thức nhắn tin theo
 \section{Công nghệ Nhận diện hành vi (TinyML)}
 \label{section:3.3}
 
-\subsection{Mạng nơ-ron tích chập thặng dư 1 chiều (1D ResNet)}
-Trong lĩnh vực xử lý chuỗi thời gian (time-series) như tín hiệu IMU, mạng nơ-ron tích chập 1 chiều (1D CNN) tỏ ra vượt trội so với các mạng nơ-ron hồi quy (RNN/LSTM) về tốc độ suy luận (inference speed) và khả năng trích xuất đặc trưng cục bộ. Tuy nhiên, khi mạng CNN được thiết kế quá sâu nhằm tăng độ chính xác, hiện tượng suy biến đạo hàm (vanishing gradient) sẽ xuất hiện. 
+\subsection{Mạng nơ-ron tích chập tách kênh 1 chiều (Depthwise Separable 1D CNN)}
+Trong lĩnh vực xử lý chuỗi thời gian (time-series) như tín hiệu IMU, mạng nơ-ron tích chập 1 chiều (1D CNN) tỏ ra vượt trội so với các mạng nơ-ron hồi quy (RNN/LSTM) về tốc độ suy luận (inference speed) và khả năng trích xuất đặc trưng cục bộ của chuyển động. Tuy nhiên, phép tích chập tiêu chuẩn vẫn khá tốn kém về số phép tính và số tham số khi triển khai trên vi điều khiển có tài nguyên eo hẹp.
 
-Để giải quyết vấn đề này, kiến trúc 1D ResNet (Residual Network) được ứng dụng \cite{he2016resnet}. Điểm cốt lõi của ResNet là cơ chế \textit{Skip Connection} (kết nối tắt), cho phép dữ liệu từ các tầng trước "bỏ qua" một số tầng trung gian để cộng trực tiếp vào đầu ra của các tầng sau. Cơ chế này không chỉ giúp huấn luyện các mạng cực sâu một cách hiệu quả mà còn giữ lại được các thông tin dao động tĩnh quan trọng của cảm biến, vốn rất dễ bị mất mát sau nhiều phép tích chập.
+Để giảm mạnh chi phí tính toán mà vẫn giữ được năng lực biểu diễn, đồ án sử dụng kỹ thuật \textit{tích chập tách kênh theo chiều sâu} (Depthwise Separable Convolution) \cite{howard2017mobilenets}. Thay vì một phép tích chập đầy đủ trộn đồng thời cả theo trục thời gian lẫn giữa các kênh, phép toán này được phân rã thành hai bước nhẹ hơn: (i) tích chập theo chiều sâu (depthwise) lọc riêng từng kênh dọc trục thời gian, và (ii) tích chập điểm $1\times1$ (pointwise) trộn thông tin giữa các kênh. Cách phân rã này giảm số tham số và số phép nhân--cộng đi nhiều lần so với tích chập tiêu chuẩn. Quan trọng hơn, chính hai toán tử depthwise và pointwise $1\times1$ lại nằm trong nhóm được thư viện ESP-NN tăng tốc mạnh nhất trên ESP32-S3 (xem Mục 4.2.2), khiến mạng CNN tách kênh trở thành lựa chọn vừa nhẹ vừa nhanh, lý tưởng cho suy luận tại biên. Chi tiết quá trình lựa chọn và tinh chỉnh kiến trúc cụ thể --- bao gồm việc thử nghiệm rồi loại bỏ các biến thể nặng hơn như mạng thặng dư (ResNet) hay mạng tích chập giãn nở theo thời gian (TCN) vì không phù hợp ràng buộc phần cứng --- được trình bày ở Chương 4.
 
 \subsection{Kỹ thuật lượng tử hóa (Quantization) cho TinyML}
-TinyML (Trí tuệ nhân tạo vạn vật) là khái niệm chỉ việc triển khai các mô hình học máy lên các vi điều khiển có tài nguyên phần cứng cực kỳ eo hẹp (vài chục KB RAM) \cite{warden2019tinyml}. Một mô hình 1D ResNet được huấn luyện bằng TensorFlow/Keras thường biểu diễn trọng số dưới dạng số thực dấu phẩy động 32-bit (Float32). Dạng dữ liệu này có kích thước rất lớn và yêu cầu vi xử lý tính toán số thực mạnh mẽ, gây tốn pin và vượt quá giới hạn SRAM của ESP32.
+TinyML (Tiny Machine Learning --- Học máy thu nhỏ) là khái niệm chỉ việc triển khai các mô hình học máy lên các vi điều khiển có tài nguyên phần cứng cực kỳ eo hẹp (vài chục KB RAM) \cite{warden2019tinyml}. Một mô hình tích chập 1D được huấn luyện bằng TensorFlow/Keras thường biểu diễn trọng số dưới dạng số thực dấu phẩy động 32-bit (Float32). Dạng dữ liệu này có kích thước rất lớn và yêu cầu vi xử lý tính toán số thực mạnh mẽ, gây tốn pin và vượt quá giới hạn SRAM của ESP32.
 
 Để giải quyết rào cản này, kỹ thuật lượng tử hóa sau huấn luyện (Post-Training Quantization - PTQ) được áp dụng. Toàn bộ trọng số và tham số kích hoạt của mạng nơ-ron được ánh xạ từ không gian Float32 xuống số nguyên 8-bit (INT8). Nhờ đó, kích thước mô hình (ROM) giảm đi 4 lần (từ vài MB xuống chỉ còn dưới 100 KB), đồng thời vi điều khiển ESP32-S3 có thể tận dụng tập lệnh SIMD để thực hiện phép nhân ma trận số nguyên siêu tốc. Lượng tử hóa tuy có làm giảm một phần nhỏ độ chính xác của mô hình, nhưng hoàn toàn nằm trong mức độ chấp nhận được để đổi lấy khả năng chạy trực tiếp trên thiết bị biên.
 
@@ -118,11 +130,45 @@ FreeRTOS đóng vai trò là "nhạc trưởng" điều phối toàn bộ hoạt
 \subsection{Nền tảng triển khai mô hình học máy (TinyML Pipeline)}
 Đồ án xây dựng một quy trình (pipeline) khép kín để phát triển và triển khai mô hình học máy lên thiết bị nhúng với các công cụ chuyên dụng:
 \begin{itemize}
-    \item \textbf{Huấn luyện mô hình (Training):} Quá trình xây dựng và huấn luyện mạng 1D ResNet được thực hiện trên máy tính bằng thư viện mã nguồn mở \textbf{TensorFlow và Keras (phiên bản 2.21)} \cite{abadi2016tensorflow}. Đây là framework mạnh mẽ giúp định nghĩa các lớp tích chập, hàm mất mát và tối ưu hóa trọng số mô hình với độ chính xác cao.
+    \item \textbf{Huấn luyện mô hình (Training):} Quá trình xây dựng và huấn luyện mạng tích chập 1D (CNN) được thực hiện trên máy tính bằng thư viện mã nguồn mở \textbf{TensorFlow và Keras (phiên bản 2.21)} \cite{abadi2016tensorflow}. Đây là framework mạnh mẽ giúp định nghĩa các lớp tích chập, hàm mất mát và tối ưu hóa trọng số mô hình với độ chính xác cao.
     \item \textbf{Nén và Lượng tử hóa (Quantization):} Sau khi huấn luyện, mô hình được chuyển đổi thông qua \textbf{TensorFlow Lite (TFLite)}. Công cụ này thực hiện lượng tử hóa sau huấn luyện (Post-Training Quantization), ép kiểu trọng số từ Float32 xuống INT8, giúp giảm dung lượng mô hình tới 4 lần mà gần như không làm suy giảm độ chính xác.
     \item \textbf{Suy luận tại biên (Inference):} Mô hình đã lượng tử hóa được nạp vào ESP32-S3 và thực thi bằng thư viện \textbf{TensorFlow Lite for Microcontrollers} \cite{david2021tensorflowlite}. Đây là một phiên bản rút gọn của TFLite, được thiết kế đặc biệt để chạy trên vi điều khiển mà không cần hệ điều hành nền tảng máy chủ, tiêu tốn chỉ vài chục kilobyte bộ nhớ.
     \item \textbf{Tối ưu hóa phần cứng (Hardware Acceleration):} Để tối đa hóa tốc độ suy luận, đồ án tích hợp thư viện \textbf{ESP-NN} \cite{espressif2023espnn} do Espressif cung cấp. Thư viện này chứa các hàm toán học (như Convolution, Fully Connected) được viết bằng hợp ngữ (Assembly) và tối ưu hóa chuyên biệt cho tập lệnh SIMD của lõi Xtensa trên ESP32-S3, giúp quá trình nhận diện diễn ra gần như tức thời.
 \end{itemize}
+
+\subsection{Thư viện suy luận nhúng: TensorFlow Lite Micro và ESP-NN}
+Khâu suy luận tại biên trong đồ án được xây dựng trên một chồng phần mềm (software stack) ba lớp, từ định dạng mô hình chung cho tới thư viện kernel tăng tốc riêng cho ESP32-S3.
+
+Ở lớp định dạng, mô hình sau huấn luyện được chuyển sang \textbf{LiteRT} --- tên gọi mới của \textbf{TensorFlow Lite} do Google đặt lại từ năm 2024 \cite{google2024litert}. Đây là runtime suy luận gọn nhẹ dành cho thiết bị biên, lưu mô hình dưới dạng FlatBuffer (\texttt{.tflite}) đã được tối ưu và lượng tử hóa, cho phép nạp và thực thi mà không cần toàn bộ đồ thị tính toán nặng nề của TensorFlow gốc.
+
+Ở lớp thực thi trên vi điều khiển, đồ án sử dụng \textbf{TensorFlow Lite for Microcontrollers (TFLM)} \cite{david2021tensorflowlite}. Khác với LiteRT bản đầy đủ vốn vẫn cần hệ điều hành và cấp phát bộ nhớ động, TFLM được viết bằng C++ tối giản, không phụ thuộc thư viện chuẩn nặng và \textit{không dùng cấp phát động}: toàn bộ tensor trung gian được đặt trong một vùng nhớ tĩnh do lập trình viên cấp phát trước gọi là \textit{tensor arena}. TFLM cũng cho phép đăng ký chọn lọc tập toán tử qua cơ chế \texttt{MicroMutableOpResolver} --- chỉ nạp đúng những toán tử (op) mà mô hình sử dụng --- nhằm tiết kiệm tối đa Flash và RAM. Espressif đóng gói TFLM thành component \texttt{esp-tflite-micro} tích hợp sẵn trong hệ sinh thái ESP-IDF \cite{espressif2024esptflitemicro}, giúp việc biên dịch và nạp mô hình lên chip trở nên liền mạch.
+
+Ở lớp tăng tốc phần cứng, TFLM mặc định thực thi các toán tử bằng \textit{kernel tham chiếu} (reference kernel) viết bằng C thuần, vốn chạy chậm. Để khai thác sức mạnh của ESP32-S3, Espressif cung cấp thư viện \textbf{ESP-NN} \cite{espressif2023espnn} chứa các kernel toán học (tích chập, tích chập tách kênh, kết nối đầy đủ, gộp...) được viết tay bằng hợp ngữ và tối ưu cho tập lệnh SIMD véc-tơ của lõi Xtensa LX7. Khi \texttt{esp-tflite-micro} được biên dịch cùng ESP-NN, các toán tử tương ứng tự động được thay bằng kernel tăng tốc, mang lại tốc độ cao gấp nhiều lần so với kernel tham chiếu. Điểm mấu chốt --- và cũng là ràng buộc định hình toàn bộ thiết kế kiến trúc mô hình ở Chương 4 và Chương 5 --- là chỉ những toán tử nằm trong danh sách được ESP-NN hỗ trợ mới được tăng tốc, do đó mô hình phải được xây dựng hoàn toàn từ các toán tử thân thiện phần cứng này.
+
+Bảng \ref{tab:espnn_ops} liệt kê các toán tử mạng nơ-ron tiêu biểu được ESP-NN tăng tốc trên ESP32-S3, kèm hệ số tăng tốc so với kernel tham chiếu C thuần (ANSI~C).
+
+\begin{table}[H]
+\centering
+\caption{Các toán tử mạng nơ-ron được ESP-NN tăng tốc trên ESP32-S3 (INT8)}
+\label{tab:espnn_ops}
+\begin{tabular}{|l|l|c|}
+\hline
+\textbf{Toán tử (Operator)} & \textbf{Vai trò trong mạng} & \textbf{Hệ số tăng tốc} \\
+\hline
+Tích chập điểm $1\times1$ (Pointwise)   & Trộn thông tin giữa các kênh   & 8,0--14,2$\times$ \\
+Hàm kích hoạt ReLU6                     & Phi tuyến, chặn biên $[0,6]$   & 11,5$\times$ \\
+Max Pooling                            & Hạ mẫu, bắt đỉnh tín hiệu      & 7,8$\times$ \\
+Fully Connected (Dense)                & Lớp phân loại đầu ra           & 7,8$\times$ \\
+Tích chập tách kênh (Depthwise)        & Lọc đặc trưng theo từng kênh   & 4,5--6,3$\times$ \\
+Tích chập chuẩn $3\times3$             & Trích đặc trưng theo thời gian & 5,5$\times$ \\
+Average Pooling / GAP                  & Gộp trung bình toàn cục        & 3,6$\times$ \\
+Cộng / Nhân phần tử (Add/Mul)          & Kết nối tắt, hiệu chỉnh kênh   & 3,5--3,8$\times$ \\
+Softmax                                & Chuẩn hóa xác suất lớp         & 1,4$\times$ \\
+\hline
+\end{tabular}
+\end{table}
+
+Các số liệu trên được trích từ tài liệu chính thức của ESP-NN \cite{espressif2023espnn} (đo trên ESP32-S3 ở 240~MHz, bộ nhớ đệm dữ liệu 64~KB). Ở cấp độ toàn mô hình, mức tăng tốc còn ấn tượng hơn nhờ tác động cộng dồn: ví dụ mô hình Person Detection (INT8) giảm thời gian suy luận từ 2300~ms xuống chỉ còn 54~ms khi bật ESP-NN \cite{espressif2024esptflitemicro}. Ngược lại, các toán tử nằm ngoài danh sách này --- điển hình là LSTM/GRU, tích chập giãn nở (dilated convolution) và các hàm sigmoid/tanh --- không có kernel tối ưu nên phải chạy bằng kernel tham chiếu chậm; đây chính là lý do chúng bị loại khỏi thiết kế mô hình của đồ án (xem Chương 4).
 
 \subsection{Bộ lọc Kalman 1D cho Dung hợp Cảm biến (Sensor Fusion)}
 

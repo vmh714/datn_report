@@ -19,17 +19,25 @@ Về mặt phần cứng thiết bị đeo, đồ án sử dụng kiến trúc h
 
 Đóng góp chính của đồ án là việc hoàn thiện một hệ thống giám sát toàn diện từ phần cứng nhúng đến ứng dụng Web, giúp giảm tải áp lực cho nhân viên y tế, nâng cao hiệu quả phản hồi khẩn cấp và bảo vệ an toàn cho người cao tuổi.
 
+Bên cạnh giá trị về mặt hệ thống, đồ án còn mang tính nghiên cứu với mục tiêu trọng tâm là trả lời câu hỏi: \textit{liệu một mạng học sâu có thể đạt độ nhạy phát hiện té ngã (Fall-recall) tương đương các mô hình chạy trên máy chủ, nhưng vẫn suy luận trọn vẹn trong một chu kỳ cửa sổ trượt trên vi điều khiển ESP32-S3 dưới ràng buộc chỉ vài chục KB Flash và RAM hay không?} Để trả lời câu hỏi này, đồ án thực hiện các đóng góp nghiên cứu chính sau:
+\begin{itemize}
+    \item \textbf{Đồng thiết kế kiến trúc mô hình theo ràng buộc phần cứng:} thiết kế một mạng tích chập tách kênh 1 chiều (Depthwise Separable 1D CNN) bám sát tập lệnh tăng tốc ESP-NN của ESP32-S3, qua đó đạt độ nhạy phát hiện té ngã cao trong khi vẫn suy luận thấp hơn chu kỳ cửa sổ trượt và vừa với ngân sách Flash/RAM của vi điều khiển.
+    \item \textbf{Chiến lược thiết kế nhãn và gán nhãn theo sự kiện:} đề xuất sơ đồ phân loại 5 lớp (tách riêng nhãn chuyển tư thế \textit{Trans}) cùng cơ chế cắt cửa sổ căn theo sự kiện dựa trên độ lớn gia tốc và vận tốc xoay, nhằm giảm thiểu đáng kể cảnh báo giả từ các sinh hoạt thường ngày.
+    \item \textbf{Quy trình lượng tử hóa và đánh giá trên phần cứng thật:} xây dựng quy trình lượng tử hóa INT8 và sinh mã nguồn nhúng có kiểm soát tập toán tử (ops), kết hợp phương pháp đánh giá độc lập theo đối tượng (subject-independent) ưu tiên chỉ số Fall-recall và Trans-F1, đồng thời đo trực tiếp độ trễ suy luận, dung lượng Flash và RAM trên chip.
+    \item \textbf{Hạ tầng thực nghiệm đầu--cuối:} hiện thực một hệ thống hoàn chỉnh (firmware hướng sự kiện với lấy mẫu chính xác bằng ngắt phần cứng PCNT, truyền 4G/MQTT, máy chủ cơ sở dữ liệu kép và giao diện Web thời gian thực) đóng vai trò bệ phóng để thu thập dữ liệu và kiểm chứng mô hình trong điều kiện vận hành thực tế.
+\end{itemize}
+
 \section{Bố cục đồ án}
 \label{section:1.4}
 Phần còn lại của báo cáo đồ án tốt nghiệp này được tổ chức như sau.
 
 Chương 2 trình bày chi tiết về quá trình khảo sát các nghiên cứu và sản phẩm tương tự hiện có trên thị trường, đồng thời đưa ra các đặc tả chức năng cốt lõi của hệ thống phần mềm.
 
-Chương 3 đi sâu vào việc giới thiệu các nền tảng lý thuyết và công nghệ được áp dụng trong đồ án, bao gồm kiến trúc truyền thông IoT (MQTT qua 4G LTE), nền tảng học máy TinyML, thuật toán mạng nơ-ron tích chập thặng dư 1 chiều (1D ResNet) và các công nghệ phát triển ứng dụng Web.
+Chương 3 đi sâu vào việc giới thiệu các nền tảng lý thuyết và công nghệ được áp dụng trong đồ án, bao gồm kiến trúc truyền thông IoT (MQTT qua 4G LTE), nền tảng học máy TinyML, thuật toán mạng nơ-ron tích chập tách kênh 1 chiều (Depthwise Separable 1D CNN) và các công nghệ phát triển ứng dụng Web.
 
 Chương 4 trình bày quá trình phân tích, thiết kế và xây dựng hệ thống, bao gồm kiến trúc phần mềm firmware theo mô hình Hướng sự kiện và Máy trạng thái, thiết kế cơ sở dữ liệu kép, giao thức truyền thông, cùng quá trình triển khai các thành phần cốt lõi như bộ lọc Kalman, pipeline TinyML, Backend và Frontend. Chương kết thúc bằng kết quả kiểm thử tích hợp hệ thống đầu cuối.
 
-Chương 5 trình bày chi tiết ba đóng góp kỹ thuật nổi bật của đồ án: (i)~chiến lược thiết kế nhãn phân loại 5 lớp nhằm giảm thiểu cảnh báo sai từ các hành vi chuyển tư thế thường ngày; (ii)~tiến trình tối ưu hóa kiến trúc mô hình học sâu từ CNN-LSTM đến mạng 1D ResNet tương thích TinyML với các kỹ thuật tối ưu phần cứng ESP-NN; và (iii)~phương pháp lấy mẫu IMU chính xác sử dụng ngắt phần cứng PCNT thay thế cơ chế trễ phần mềm FreeRTOS.
+Chương 5 trình bày chi tiết ba đóng góp kỹ thuật nổi bật của đồ án: (i)~chiến lược thiết kế nhãn phân loại 5 lớp nhằm giảm thiểu cảnh báo sai từ các hành vi chuyển tư thế thường ngày; (ii)~tiến trình tối ưu hóa kiến trúc mô hình học sâu từ CNN-LSTM, qua TCN, đến mạng tích chập tách kênh (CNN) tương thích TinyML với các kỹ thuật tối ưu phần cứng ESP-NN; và (iii)~phương pháp lấy mẫu IMU chính xác sử dụng ngắt phần cứng PCNT thay thế cơ chế trễ phần mềm FreeRTOS.
 
 Cuối cùng, Chương 6 tổng kết lại các kết quả chính đã đạt được, đồng thời đề xuất những hướng phát triển và mở rộng ứng dụng trong tương lai.
 
