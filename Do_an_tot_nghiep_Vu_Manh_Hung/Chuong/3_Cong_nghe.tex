@@ -122,6 +122,15 @@ TinyML (Tiny Machine Learning --- Học máy thu nhỏ) là khái niệm chỉ v
 \section{Nền tảng Phần mềm và Hệ thống}
 \label{section:3.4}
 
+\subsection{Bộ lọc Kalman 1D cho Dung hợp Cảm biến (Sensor Fusion)}
+\label{subsection:3.4.1}
+
+Trong bài toán ước lượng góc nghiêng (Roll, Pitch) của thiết bị đeo từ tín hiệu IMU, mỗi loại cảm biến đều mang một điểm mạnh và điểm yếu đối nghịch nhau. Gia tốc kế cho phép tính toán góc tĩnh rất chính xác dựa trên hướng của véc-tơ trọng lực, nhưng lại cực kỳ nhạy cảm với nhiễu tần số cao (high-frequency noise) khi thiết bị va đập mạnh hoặc chuyển động đột ngột --- đúng là đặc trưng của cú ngã. Ngược lại, con quay hồi chuyển (gyroscope) phản ứng tức thời và mượt mà với mọi chuyển động, nhưng khi ước lượng góc bằng cách tích phân vận tốc góc theo thời gian, sai số nhỏ của mỗi chu kỳ lấy mẫu sẽ tích lũy thành sai số trôi (drift) không thể tự hiệu chỉnh được.
+
+Bộ lọc Kalman 1 chiều (1D Kalman Filter) giải quyết mâu thuẫn này bằng cách kết hợp linh hoạt đầu ra của cả hai cảm biến theo một trọng số tối ưu được cập nhật động theo từng chu kỳ \cite{kalman1960new}. Thuật toán hoạt động qua hai bước tuần hoàn: bước \textit{Dự báo (Predict)} sử dụng vận tốc góc từ gyroscope để ước lượng góc nghiêng tại thời điểm hiện tại và tính toán sai số dự báo tích lũy; bước \textit{Cập nhật (Update)} sử dụng góc tĩnh tính từ gia tốc kế như một phép đo tham chiếu để hiệu chỉnh lại kết quả dự báo thông qua hệ số Kalman Gain. Tham số phương sai nhiễu đo lường của gia tốc kế (\texttt{R\_measure}) đóng vai trò điều chỉnh mức độ tin tưởng vào phép đo gia tốc: giá trị cao hơn sẽ làm bộ lọc ít bị dao động khi gia tốc nhiễu (như lúc va chạm), trong khi giá trị thấp hơn giúp hội tụ nhanh hơn khi cơ thể ở trạng thái tĩnh.
+
+Trong hệ thống này, thư viện \texttt{lib\_kalman} được gọi trực tiếp trong \texttt{svc\_imu} tại mỗi chu kỳ lấy mẫu 100~Hz. Góc Roll và Pitch đã được làm mượt bởi bộ lọc được đưa vào cùng với dữ liệu gia tốc thô và vận tốc góc thô để tạo thành véc-tơ đặc trưng 6 chiều đầu vào cho mô hình TinyML. Điều này giúp loại bỏ phần lớn nhiễu ngắn hạn không mang thông tin hành vi, đồng thời cung cấp cho mô hình một biểu diễn tư thế ổn định hơn, từ đó giảm thiểu đáng kể tỷ lệ cảnh báo sai trong sinh hoạt hàng ngày.
+
 \subsection{Nền tảng phát triển Nhúng ESP-IDF và FreeRTOS}
 ESP-IDF (Espressif IoT Development Framework) là bộ công cụ phát triển phần mềm chính thức cho dòng chip ESP32 \cite{espressif2023espidf}. Khác với môi trường Arduino IDE vốn chỉ phù hợp cho các dự án nhỏ với cấu trúc lập trình tuần tự (Super Loop), ESP-IDF cung cấp khả năng can thiệp sâu vào phần cứng và hỗ trợ đa luồng thông qua hệ điều hành thời gian thực FreeRTOS \cite{freertos2023manual}.
 
@@ -170,13 +179,35 @@ Softmax                                & Chuẩn hóa xác suất lớp         
 
 Các số liệu trên được trích từ tài liệu chính thức của ESP-NN \cite{espressif2023espnn} (đo trên ESP32-S3 ở 240~MHz, bộ nhớ đệm dữ liệu 64~KB). Ở cấp độ toàn mô hình, mức tăng tốc còn ấn tượng hơn nhờ tác động cộng dồn: ví dụ mô hình Person Detection (INT8) giảm thời gian suy luận từ 2300~ms xuống chỉ còn 54~ms khi bật ESP-NN \cite{espressif2024esptflitemicro}. Ngược lại, các toán tử nằm ngoài danh sách này --- điển hình là LSTM/GRU, tích chập giãn nở (dilated convolution) và các hàm sigmoid/tanh --- không có kernel tối ưu nên phải chạy bằng kernel tham chiếu chậm; đây chính là lý do chúng bị loại khỏi thiết kế mô hình của đồ án (xem Chương 4).
 
-\subsection{Bộ lọc Kalman 1D cho Dung hợp Cảm biến (Sensor Fusion)}
+\subsection{Các thông số đặc trưng khi triển khai mô hình TinyML lên vi điều khiển}
+\label{subsection:3.4.5}
 
-Trong bài toán ước lượng góc nghiêng (Roll, Pitch) của thiết bị đeo từ tín hiệu IMU, mỗi loại cảm biến đều mang một điểm mạnh và điểm yếu đối nghịch nhau. Gia tốc kế cho phép tính toán góc tĩnh rất chính xác dựa trên hướng của véc-tơ trọng lực, nhưng lại cực kỳ nhạy cảm với nhiễu tần số cao (high-frequency noise) khi thiết bị va đập mạnh hoặc chuyển động đột ngột --- đúng là đặc trưng của cú ngã. Ngược lại, con quay hồi chuyển (gyroscope) phản ứng tức thời và mượt mà với mọi chuyển động, nhưng khi ước lượng góc bằng cách tích phân vận tốc góc theo thời gian, sai số nhỏ của mỗi chu kỳ lấy mẫu sẽ tích lũy thành sai số trôi (drift) không thể tự hiệu chỉnh được.
+Sau khi lượng tử hóa xong, mô hình TinyML phải vượt qua một khâu đóng gói và triển khai đặc thù để hoạt động được trong môi trường vi điều khiển không có hệ điều hành nặng. Có ba thông số kỹ thuật quan trọng nhất phản ánh trực tiếp chi phí tài nguyên và hiệu năng của mô hình trên chip: \textit{mảng trọng số} (bộ nhớ Flash), \textit{tensor arena} (bộ nhớ RAM) và \textit{thời gian suy luận}.
 
-Bộ lọc Kalman 1 chiều (1D Kalman Filter) giải quyết mâu thuẫn này bằng cách kết hợp linh hoạt đầu ra của cả hai cảm biến theo một trọng số tối ưu được cập nhật động theo từng chu kỳ \cite{kalman1960new}. Thuật toán hoạt động qua hai bước tuần hoàn: bước \textit{Dự báo (Predict)} sử dụng vận tốc góc từ gyroscope để ước lượng góc nghiêng tại thời điểm hiện tại và tính toán sai số dự báo tích lũy; bước \textit{Cập nhật (Update)} sử dụng góc tĩnh tính từ gia tốc kế như một phép đo tham chiếu để hiệu chỉnh lại kết quả dự báo thông qua hệ số Kalman Gain. Tham số phương sai nhiễu đo lường của gia tốc kế (\texttt{R\_measure}) đóng vai trò điều chỉnh mức độ tin tưởng vào phép đo gia tốc: giá trị cao hơn sẽ làm bộ lọc ít bị dao động khi gia tốc nhiễu (như lúc va chạm), trong khi giá trị thấp hơn giúp hội tụ nhanh hơn khi cơ thể ở trạng thái tĩnh.
+\subsubsection*{Mảng trọng số mô hình trong Flash (\texttt{model\_data.cc/.h})}
 
-Trong hệ thống này, thư viện \texttt{lib\_kalman} được gọi trực tiếp trong \texttt{svc\_imu} tại mỗi chu kỳ lấy mẫu 100~Hz. Góc Roll và Pitch đã được làm mượt bởi bộ lọc được đưa vào cùng với dữ liệu gia tốc thô và vận tốc góc thô để tạo thành véc-tơ đặc trưng 6 chiều đầu vào cho mô hình TinyML. Điều này giúp loại bỏ phần lớn nhiễu ngắn hạn không mang thông tin hành vi, đồng thời cung cấp cho mô hình một biểu diễn tư thế ổn định hơn, từ đó giảm thiểu đáng kể tỷ lệ cảnh báo sai trong sinh hoạt hàng ngày.
+Khác với môi trường máy tính nơi tệp \texttt{.tflite} được đọc từ đĩa qua hệ thống tập tin, vi điều khiển chạy TFLM không có filesystem thông thường trong quá trình suy luận. Để đưa mô hình lên chip, tệp nhị phân \texttt{.tflite} --- vốn là một FlatBuffer chứa toàn bộ cấu trúc đồ thị, trọng số INT8 và tham số lượng tử hóa --- được chuyển đổi thành một \textit{mảng hằng số kiểu byte trong C} bằng lệnh \texttt{xxd -i}. Mảng này, thường đặt trong cặp tệp \texttt{model\_data.cc/.h}, được biên dịch thẳng vào firmware và nằm trong vùng nhớ Flash (ROM) của chip. Tại thời điểm khởi động, TFLM nhận một con trỏ tới mảng này và dựng lại đồ thị tính toán mà không cần đọc/ghi bộ nhớ động, bảo đảm tính xác định (determinism) tuyệt đối.
+
+Một yêu cầu quan trọng khi sinh tệp này là phải xác định đầy đủ danh sách toán tử (ops) mà mô hình sử dụng để cấu hình \texttt{MicroMutableOpResolver} trong C++. Việc thiếu sót dù chỉ một toán tử ẩn (ví dụ: \texttt{MAX\_POOL\_2D} được ánh xạ ngầm từ \texttt{MaxPooling1D}, hay \texttt{STRIDED\_SLICE} xuất hiện do cắt tensor) sẽ khiến thiết bị crash ngay khi khởi động với lỗi \textit{``Didn't find op for builtin opcode''}. Trong đồ án, công cụ \texttt{export\_tflite\_with\_ops.py} xử lý vấn đề này bằng cách phân tích trực tiếp cấu trúc FlatBuffer thay vì dùng API cấp cao của TFLite vốn hay bỏ sót op ẩn, rồi nhúng sẵn gợi ý resolver vào phần comment của tệp \texttt{.cc} sinh ra.
+
+\subsubsection*{Tensor Arena (Vùng nhớ tĩnh cho tensor trung gian)}
+
+TFLM không sử dụng cấp phát bộ nhớ động (\texttt{malloc}/\texttt{new}) trong quá trình suy luận. Thay vào đó, mọi tensor kích hoạt trung gian (intermediate activation tensor), vùng đệm tính toán của kernel (scratch buffer), và siêu dữ liệu của interpreter đều được đặt vào một vùng nhớ liên tục duy nhất do lập trình viên khai báo trước, gọi là \textit{tensor arena}. Đây là một mảng \texttt{uint8\_t} có kích thước cố định, thường được khai báo dưới dạng biến tĩnh toàn cục để nằm trong vùng SRAM của chip:
+
+\begin{verbatim}
+constexpr int TENSOR_ARENA_SIZE = 32 * 1024;  // ví dụ: 32 KB
+alignas(16) static uint8_t tensor_arena[TENSOR_ARENA_SIZE];
+\end{verbatim}
+
+Kích thước tensor arena cần thiết phụ thuộc vào: (i) kích thước của tensor kích hoạt lớn nhất trong đồ thị, (ii) dung lượng vùng đệm tạm thời mà các kernel ESP-NN yêu cầu, và (iii) overhead của interpreter. Trên thực tế, tensor arena được khai báo là một mảng tĩnh kiểu \texttt{uint8\_t} với kích thước định sẵn, ví dụ \texttt{alignas(16) static uint8\_t tensor\_arena[N]}, và truyền cho interpreter khi khởi tạo. Nếu kích thước \texttt{N} nhỏ hơn mức cần thiết, hàm \texttt{interpreter.AllocateTensors()} trả về lỗi và firmware không thể khởi động. Để xác định kích thước tối thiểu chính xác, TFLM cung cấp hàm \texttt{interpreter.arena\_used\_bytes()} trả về lượng bộ nhớ thực sự đã dùng sau khi cấp phát thành công --- đây là giá trị được ghi nhận và báo cáo trong tệp \texttt{report\_*\_firmware.txt} của từng thí nghiệm dưới trường ``\textit{Tensor Arena (RAM) sử dụng}''. Tensor arena là một trong hai tài nguyên khan hiếm nhất của vi điều khiển cần kiểm soát chặt, tài nguyên còn lại là dung lượng Flash để chứa trọng số mô hình.
+
+\subsubsection*{Thời gian suy luận (Inference Latency)}
+
+Thời gian suy luận là khoảng thời gian tính từ khi gọi \texttt{interpreter.Invoke()} đến khi hàm này trả về, bao gồm toàn bộ quá trình tính toán của mọi toán tử trong đồ thị theo đúng thứ tự topology. Đây là chỉ số phản ánh trực tiếp khả năng đáp ứng thời gian thực của hệ thống và được đo bằng bộ đếm thời gian độ phân giải cao (\texttt{esp\_timer\_get\_time()} trả về micro-giây) ngay trước và sau lời gọi.
+
+Thời gian suy luận bị chi phối bởi ba yếu tố chính. \textbf{Thứ nhất, kiến trúc mô hình:} số lượng toán tử, kích thước bản đồ đặc trưng (feature map) và số kênh trong mỗi lớp quyết định tổng số phép tính nhân--cộng cần thực hiện. \textbf{Thứ hai, mức độ tăng tốc ESP-NN:} như đã đề cập ở Bảng~\ref{tab:espnn_ops}, các toán tử được ESP-NN hỗ trợ (tích chập tiêu chuẩn, tích chập tách kênh, dense, max pooling...) chạy nhanh hơn nhiều lần so với kernel tham chiếu; do đó, cùng một số phép tính nhưng mô hình dùng toán tử nằm ngoài danh sách (như tích chập giãn nở hay sigmoid) sẽ chậm hơn đáng kể. \textbf{Thứ ba, tốc độ xung nhịp và bộ nhớ đệm:} ESP32-S3 chạy ở 240~MHz với bộ đệm dữ liệu 64~KB; nếu tensor arena vượt quá sức chứa SRAM tích hợp và tràn sang PSRAM, băng thông truy cập chậm hơn sẽ làm tăng latency.
+
+Trong ngữ cảnh của bài toán nhận diện hành vi với cửa sổ dữ liệu 2 giây (200 mẫu ở 100~Hz), thời gian suy luận cần thỏa mãn ràng buộc: nếu hệ thống xử lý cửa sổ trượt liên tục (sliding window), inference phải hoàn thành trong thời gian nhỏ hơn chu kỳ lấy mẫu cửa sổ để không gây trễ tích lũy. Kết quả đo thực tế trên phần cứng thật của từng mô hình trong đồ án được trình bày chi tiết tại Chương~4.
 
 \section{Hệ quản trị Cơ sở dữ liệu}
 \label{section:3.5}

@@ -12,7 +12,7 @@ Phân tích tín hiệu cho thấy nguyên nhân cốt lõi: các hành động 
 
 \subsection{Giải pháp}
 
-Giải pháp được đề xuất là bổ sung một nhãn chuyên biệt \textit{Trans} (Transition --- Chuyển tiếp) để tách biệt hoàn toàn các hành vi chuyển đổi tư thế ra khỏi cả nhóm trạng thái tĩnh lẫn nhóm té ngã. Với sơ đồ năm nhãn mới gồm \textit{Walk}, \textit{Run}, \textit{Idle}, \textit{Trans} và \textit{Fall}, mô hình được cung cấp đủ bối cảnh ngữ nghĩa để học được ranh giới quyết định riêng biệt cho mỗi loại động học. Cụ thể, nhãn \textit{Idle} chỉ chứa các trạng thái thực sự tĩnh (đứng yên, ngồi, nằm), trong khi nhãn \textit{Trans} gộp tất cả các thao tác chuyển đổi tư thế từ bộ dữ liệu SisFall. Bảng \ref{tab:label_mapping} trình bày chi tiết ánh xạ nhãn, trong đó đáng chú ý là nhãn \textit{Idle} và \textit{Trans} cùng được trích xuất từ một nhóm mã hoạt động D07--D16: phương pháp phát hiện đỉnh (peak detection) trên tổng véc-tơ gia tốc (SVM) được áp dụng để phân tách --- 3 cửa sổ quanh đỉnh SVM được gán nhãn \textit{Trans}, còn các đoạn tĩnh xa đỉnh (xác định theo hướng véc-tơ trọng lực) được gán nhãn \textit{Idle}.
+Giải pháp được đề xuất là bổ sung một nhãn chuyên biệt \textit{Trans} (Transition --- Chuyển tiếp) để tách biệt hoàn toàn các hành vi chuyển đổi tư thế ra khỏi cả nhóm trạng thái tĩnh lẫn nhóm té ngã. Trước khi chốt phương án năm nhãn, đồ án cũng đã thử cấu hình \textbf{sáu nhãn} bằng cách tách thêm hai trạng thái tĩnh Nằm (\textit{Lie}) và Đứng/Ngồi (\textit{StandSit}); tuy nhiên cả hai trạng thái này đều có véc-tơ gia tốc trỏ gần như cùng hướng trọng lực với biên độ dao động rất thấp, gần như không thể phân biệt qua tín hiệu IMU, và cũng không mang ý nghĩa lâm sàng khác biệt đủ để phân loại riêng --- do đó chúng được gộp lại thành siêu nhãn \textit{Idle}. Với sơ đồ năm nhãn chốt gồm \textit{Walk}, \textit{Run}, \textit{Idle}, \textit{Trans} và \textit{Fall}, mô hình được cung cấp đủ bối cảnh ngữ nghĩa để học được ranh giới quyết định riêng biệt cho mỗi loại động học. Cụ thể, nhãn \textit{Idle} chỉ chứa các trạng thái thực sự tĩnh (đứng yên, ngồi, nằm), trong khi nhãn \textit{Trans} gộp tất cả các thao tác chuyển đổi tư thế từ bộ dữ liệu SisFall. Bảng \ref{tab:label_mapping} trình bày chi tiết ánh xạ nhãn, trong đó đáng chú ý là nhãn \textit{Idle} và \textit{Trans} cùng được trích xuất từ nhóm mã hoạt động D07--D16: ban đầu phương pháp phát hiện đỉnh SVM được áp dụng nhưng đỉnh SVM dễ bị nhiễu bởi bước chân mạnh; tiêu chí gán nhãn sau đó được cải tiến sang dùng giá trị RMS của con quay hồi chuyển với ngưỡng kích hoạt $> 20$~dps --- mỗi vùng vượt ngưỡng xác định một sự kiện chuyển tiếp và được cắt một cửa sổ 2 giây căn vào đỉnh sự kiện để gán nhãn \textit{Trans}; các đoạn không vượt ngưỡng (xác định theo hướng véc-tơ trọng lực) được gán nhãn \textit{Idle}.
 
 \begin{table}[H]
 \centering
@@ -24,8 +24,8 @@ Giải pháp được đề xuất là bổ sung một nhãn chuyên biệt \tex
 \hline
 Walk  & D01, D02, D05, D06      & Đi bộ chậm/nhanh, leo/xuống cầu thang \\
 Run   & D03, D04                & Chạy bộ chậm/nhanh \\
-Idle  & D07--D16 (đoạn xa đỉnh) & Peak detection --- vùng tĩnh theo hướng trọng lực \\
-Trans & D07--D16 (quanh đỉnh)   & Peak detection --- 3 cửa sổ quanh đỉnh SVM \\
+Idle  & D07--D16 (đoạn không vượt ngưỡng) & Gyro RMS $\leq 20$~dps --- vùng tĩnh theo hướng trọng lực \\
+Trans & D07--D16 (vùng vượt ngưỡng)      & Gyro RMS $> 20$~dps --- 1 cửa sổ căn vào đỉnh sự kiện \\
 Fall  & F01--F15                & Toàn bộ sự kiện ngã \\
 \hline
 \end{tabular}
@@ -100,6 +100,37 @@ Lượng tử hóa INT8 (toàn bộ)    & $\sim$4$\times$ (bộ nhớ), $\sim$2$
 \end{table}
 
 Kết quả thực đo trên phần cứng cho thấy v30\_optimize đạt thời gian suy luận trung bình \textbf{56,7~ms} cho một cửa sổ đầu vào $200 \times 6$ (chiếm khoảng 11\% chu kỳ cập nhật 500~ms của cơ chế cửa sổ trượt), bảo đảm tính thời gian thực. Mô hình đạt độ chính xác firmware \textbf{95,30\%} và Fall Recall 97,50\%, với điểm F1 nhãn Trans đạt 0,907 --- vượt xa các biến thể CNN baseline (v30: F1-Trans 0,799) và mô hình v25 trước đây (độ chính xác 90,33\%). Như vậy, cải tiến head giữ trục thời gian đã nâng đáng kể chất lượng phân loại ở các nhãn khó mà gần như không phải đánh đổi về khả năng triển khai. Kết quả so sánh đầy đủ giữa các kiến trúc được trình bày trong các Bảng \ref{tab:model_comparison} và \ref{tab:mcu_arch_compare} tại Mục 4.3.
+
+\paragraph{Đánh giá khái quát hóa qua kiểm định chéo dân số (KFold v6).}
+
+Nhận thấy ưu điểm của v30\_tcn ở khả năng mô hình hóa ngữ cảnh thời gian dài --- đặc biệt trong các kịch bản kiểm tra chéo giữa người trẻ và người già --- đồ án tiến hành kiểm định chéo 5 kịch bản Leave-Subjects-Out trên v30\_optimize để xác nhận khả năng khái quát hóa, không chỉ trên phân chia chuẩn.
+
+\begin{table}[H]
+\centering
+\caption{Kết quả kiểm định chéo dân số (KFold v6) của v30\_optimize trên tập SisFall}
+\label{tab:kfold_v6}
+\small
+\begin{tabular}{|l|p{3.2cm}|c|c|c|}
+\hline
+\textbf{Kịch bản} & \textbf{Mô tả} & \textbf{Acc.} & \textbf{Trans F1} & \textbf{Fall Recall} \\
+\hline
+S1 Elderly-only & Train+Test = SE (người già)           & 89,1\% & 0,83 & $\dagger$ \\
+S2 Young-only   & Train+Test = SA (người trẻ)           & 96,8\% & 0,91 & 99,6\% \\
+S3 TrainSE$\to$TestSA & Già $\to$ Trẻ (cross-pop)      & 94,6\% & 0,83 & 95,3\% \\
+S4 TrainSA$\to$TestSE & Trẻ $\to$ Già (cross-pop)      & 92,8\% & 0,87 & 98,7\%$^{\ddagger}$ \\
+S5 Both         & Train+Test = SA+SE (hỗn hợp)          & 96,3\% & 0,92 & 99,5\% \\
+\hline
+\multicolumn{5}{|l|}{\footnotesize $^\dagger$ S1: chỉ 1/5 fold có mẫu Fall trong tập kiểm tra (375 mẫu, 0/375 phát hiện) --- giới hạn dữ liệu Fall của SE.} \\
+\multicolumn{5}{|l|}{\footnotesize $^{\ddagger}$ S4: Fall Recall 98,7\% nhưng Precision chỉ 74,6\% --- người già chuyển tư thế sinh nhiều cảnh báo sai hơn.} \\
+\hline
+\end{tabular}
+\end{table}
+
+Kết quả S5 (hỗn hợp cả hai nhóm) xác nhận v30\_optimize đạt khả năng khái quát hóa tốt: accuracy trung bình 96,3\%, Trans F1 $\approx 0{,}92$ và Fall Recall 99,5\% trên tập chưa gặp, tiệm cận kết quả phân chia chuẩn. Kịch bản S1 bộc lộ giới hạn của tập SisFall: dữ liệu Fall của người già (SE) quá ít; khi phân chia chéo, hầu hết fold kiểm tra không có mẫu Fall để đánh giá --- đây là giới hạn dữ liệu, không phải giới hạn mô hình. Kết quả S4 cho thấy mô hình huấn luyện trên người trẻ có độ nhạy Fall cao với người già (Recall 98,7\%) nhưng sinh nhiều cảnh báo sai hơn (Precision 74,6\%), phản ánh sự khác biệt về kiểu chuyển tư thế giữa hai nhóm tuổi.
+
+\paragraph{Thử nghiệm Chưng cất tri thức (KD) nhằm đóng thêm khoảng cách với TCN.}
+
+Sau khi xác nhận v30\_optimize qua KFold, đồ án thực hiện thêm một thử nghiệm Chưng cất tri thức (Knowledge Distillation) từ v30\_tcn sang v30\_optimize, mang tên \textbf{v30\_kd2} (hệ số alpha = 0,5), nhằm hấp thụ phân phối xác suất mềm của TCN để cải thiện thêm Trans F1. Kết quả đo trực tiếp trên phần cứng cho thấy v30\_kd2 đạt độ chính xác firmware \textbf{95,30\%}, Trans F1 = \textbf{0,945} (tăng từ 0,907) và Fall Recall 97,5\%, với thời gian suy luận 56,68~ms và tensor arena 28,3~KB --- tài nguyên gần như không đổi so với bản không có KD. Tuy nhiên, thí nghiệm cắt bỏ (ablation) cho thấy chính phiên bản tắt hoàn toàn KD (\texttt{KD\_weight=0}) đạt kết quả F1 tương đương hoặc nhỉnh hơn mọi bản có KD, khẳng định phần lớn thắng lợi đến từ \textit{kiến trúc head giữ trục thời gian} chứ không phải từ nhãn mềm. KD là hướng tiếp cận có giá trị để nghiên cứu thêm, nhưng không phải đóng góp kiến trúc trọng tâm của đồ án.
 
 % -----------------------------------------------------------------------
 
