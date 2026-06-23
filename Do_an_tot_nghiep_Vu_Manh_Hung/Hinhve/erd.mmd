@@ -1,0 +1,85 @@
+erDiagram
+    organizations {
+        UUID id PK
+        string name
+        string address
+        datetime created_at
+        datetime updated_at
+    }
+    users {
+        UUID id PK
+        string username
+        string password_hash
+        enum role
+        UUID org_id FK
+        datetime created_at
+        datetime updated_at
+    }
+    wearers {
+        UUID id PK
+        string full_name
+        float height_cm
+        UUID org_id FK
+        datetime created_at
+        datetime updated_at
+    }
+    devices {
+        string device_id PK
+        string firmware_version
+        UUID current_wearer_id FK
+        bool is_active
+        int telemetry_interval
+        float fall_threshold
+        int fall_cooldown
+        UUID org_id FK
+        int battery_pct
+        int last_rssi
+        datetime last_online
+        datetime created_at
+        datetime updated_at
+    }
+    alerts {
+        UUID id PK
+        string device_id FK
+        UUID wearer_id FK
+        string alert_type
+        float confidence
+        bool is_resolved
+        datetime created_at
+        datetime updated_at
+    }
+    device_events {
+        UUID id PK
+        string device_id FK
+        UUID wearer_id FK
+        string event_type
+        string description
+        datetime created_at
+        datetime updated_at
+    }
+    verification_sessions {
+        UUID id PK
+        string device_id FK
+        UUID wearer_id FK
+        UUID org_id FK
+        string subject_code
+        string activity_code
+        string trial_no
+        int sample_count
+        float duration_s
+        string file_path
+        datetime created_at
+        datetime updated_at
+    }
+
+    organizations ||--o{ users : "has"
+    organizations ||--o{ wearers : "has"
+    organizations ||--o{ devices : "owns"
+    organizations ||--o{ verification_sessions : "owns"
+    wearers ||--o| devices : "wears"
+    devices ||--o{ alerts : "triggers"
+    devices ||--o{ device_events : "logs"
+    devices ||--o{ verification_sessions : "records"
+    wearers ||--o{ alerts : "linked to"
+    wearers ||--o{ device_events : "linked to"
+    wearers ||--o{ verification_sessions : "subject of"
